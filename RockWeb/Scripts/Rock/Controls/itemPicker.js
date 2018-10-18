@@ -127,8 +127,8 @@
                             selectedNames = [];
 
                   $.each(selectedNodes, function (index, node) {
-                    var nodeName = $("<textarea/>").html(node.name).text();
-                    selectedNames.push(nodeName);
+                    
+                    selectedNames.push(node.name);
                     selectedIds.push(node.id);
                     });
 
