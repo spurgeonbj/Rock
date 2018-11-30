@@ -361,11 +361,12 @@ namespace RockWeb.Blocks.Groups
             }
 
             var mergefields = e.MergeValues;
-            e.MergeValues.Add( "GroupRole", groupMemberRow.GroupRole );
-            e.MergeValues.Add( "GroupMemberStatus", ( ( GroupMemberStatus ) groupMemberRow.GroupMemberStatus ).ConvertToString() );
-
             var groupMember = new GroupMemberService( new RockContext() ).Get( groupMemberRow.Id );
             groupMember.LoadAttributes();
+
+            e.MergeValues.Add( "GroupName", groupMember.Group.Name );
+            e.MergeValues.Add( "GroupRole", groupMemberRow.GroupRole );
+            e.MergeValues.Add( "GroupMemberStatus", ( ( GroupMemberStatus ) groupMemberRow.GroupMemberStatus ).ConvertToString() );
 
             var dynamicAttributeCarrier = new RockDynamic();
             foreach (var attributeKeyValue in groupMember.AttributeValues)
