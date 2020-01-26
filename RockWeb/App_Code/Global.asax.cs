@@ -34,7 +34,7 @@ using System.Web.Optimization;
 using System.Web.Routing;
 
 using DotLiquid;
-
+using MassTransit;
 using Quartz;
 using Quartz.Impl;
 using Quartz.Impl.Matchers;
@@ -77,6 +77,11 @@ namespace RockWeb
         /// The Application log filename
         /// </summary>
         private const string APP_LOG_FILENAME = "RockApplication";
+
+        /// <summary>
+        /// Global IBus message broker
+        /// </summary>
+        IBus busControl = null;
 
         #endregion
 
