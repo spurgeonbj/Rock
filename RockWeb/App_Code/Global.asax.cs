@@ -44,6 +44,7 @@ using Rock.Communication;
 using Rock.Configuration;
 using Rock.Data;
 using Rock.Jobs;
+using Rock.MessageBus.Consumers;
 using Rock.Model;
 using Rock.Plugin;
 using Rock.Transactions;
@@ -81,7 +82,13 @@ namespace RockWeb
         /// <summary>
         /// Global IBus message broker
         /// </summary>
-        IBus busControl = null;
+        private static IBusControl busControl = null;
+
+        public static IBusControl MessageBusContext {
+            get {
+                return busControl;
+            }
+        }
 
         #endregion
 
@@ -229,6 +236,17 @@ namespace RockWeb
                     {
                         System.Diagnostics.Debug.WriteLine( string.Format( "Configure WebApiConfig - {0} ms", stopwatch.Elapsed.TotalMilliseconds ) );
                     }
+
+                    // Setup message bus
+                    busControl = Bus.Factory.CreateUsingInMemory( cfg =>
+                    {
+                         cfg.ReceiveEndpoint( "entity_updates", ep =>
+                         {
+                             ep.Consumer( () => new EntityUpdateConsumer() );
+                         });
+                    });
+                    busControl.StartAsync();
+                    
 
                     // setup and launch the jobs infrastructure if running under IIS
                     bool runJobsInContext = Convert.ToBoolean( ConfigurationManager.AppSettings["RunJobsInIISContext"] );

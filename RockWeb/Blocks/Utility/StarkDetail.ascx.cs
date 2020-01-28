@@ -16,8 +16,11 @@
 //
 using System;
 using System.ComponentModel;
+using System.Dynamic;
 using System.Web.UI;
+using MassTransit;
 using Rock.Attribute;
+using Rock.MessageBus.Messages;
 using Rock.Model;
 
 namespace RockWeb.Blocks.Utility
@@ -108,10 +111,12 @@ namespace RockWeb.Blocks.Utility
 
             if ( !Page.IsPostBack )
             {
-                // added for your convenience
+                var bus = ( IBus ) Global.MessageBusContext;
 
-                // to show the created/modified by date time details in the PanelDrawer do something like this:
-                // pdAuditDetails.SetEntity( <YOUROBJECT>, ResolveRockUrl( "~" ) );
+                // Send
+                var endpoint = bus.GetSendEndpoint( new Uri( "queue:entity_updates" ) );
+                var sendEndpoint = endpoint.Result;
+                sendEndpoint.Send<IEntityUpdate>( new { EntityType = "test send" } );
             }
         }
 
@@ -138,5 +143,20 @@ namespace RockWeb.Blocks.Utility
         // helper functional methods (like BindGrid(), etc.)
 
         #endregion
+
+        protected void btnFire_Click( object sender, EventArgs e )
+        {
+            
+
+            var bus = (IBus) Global.MessageBusContext;
+
+            // Send
+            var endpoint = bus.GetSendEndpoint( new Uri( "queue:entity_updates" ) );
+            var sendEndpoint = endpoint.Result;
+            sendEndpoint.Send<IEntityUpdate>( new { EntityType = "test send" } );
+
+            // Publish
+            //bus.Publish<IEntityUpdate>( new { EntityType = "test publish" } );
+        }
     }
 }
