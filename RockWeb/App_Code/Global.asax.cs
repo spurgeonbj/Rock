@@ -246,6 +246,14 @@ namespace RockWeb
                          });
                     });
                     busControl.StartAsync();
+
+                    // test registering a consumer endpoint after the bus is started 
+                    busControl.ConnectReceiveEndpoint( "entity_updates", ep =>
+                    {
+                        ep.Consumer( () => new EntityUpdateConsumer() );
+                    });
+
+                    
                     
 
                     // setup and launch the jobs infrastructure if running under IIS
