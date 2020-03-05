@@ -212,9 +212,9 @@
                 }
 
                 // handle click of scan button
-                $('.js-camera-button-container .js-camera-button').on('click', function (a) {
+                $('.js-camera-button').on('click', function (a) {
                     a.preventDefault();
-                    if (window.RockCheckinNative) {
+                    if (typeof window.RockCheckinNative !== 'undefined' && typeof window.RockCheckinNative.StartCamera !== 'undefined') {
                         // Reset the swipe processing as it may have failed silently.
                         swipeProcessing = false;
                         window.RockCheckinNative.StartCamera(false);
@@ -222,11 +222,13 @@
                 });
 
                 // auto-show or auto-enable camera if configured to do so.
-                if ($('.js-camera-mode').val() === 'Always On') {
-                    window.RockCheckinNative.StartCamera(false);
-                }
-                else if ($('.js-camera-mode').val() === 'Passive') {
-                    window.RockCheckinNative.StartCamera(true);
+                if (typeof window.RockCheckinNative !== 'undefined' && typeof window.RockCheckinNative.StartCamera !== 'undefined') {
+                    if ($('.js-camera-mode').val() === 'AlwaysOn') {
+                        window.RockCheckinNative.StartCamera(false);
+                    }
+                    else if ($('.js-camera-mode').val() === 'Passive') {
+                        window.RockCheckinNative.StartCamera(true);
+                    }
                 }
 
                 if ($('.js-manager-login').length) {
@@ -335,13 +337,6 @@
                         <div class="js-start-button-container">
                             <asp:Literal ID="lStartButtonHtml" runat="server" />
                         </div>
-                        <asp:Panel ID="pnlCameraButtonContainer" runat="server" class="js-camera-button-container">
-                            <div class='checkin-search-actions checkin-camera'>
-                                <a class='btn btn-primary btn-checkin js-camera-button'>
-                                    <span>Scan Barcode</span>
-                                </a>
-                            </div>
-                        </asp:Panel>
                     </div>
                 </div>
             </div>

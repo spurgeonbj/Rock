@@ -951,6 +951,33 @@ namespace Rock.Lava
         }
 
         /// <summary>
+        /// Returns matched RegEx list of strings from inputted string
+        /// </summary>
+        /// <param name="input">The input.</param>
+        /// <param name="expression">The regex expression.</param>
+        /// <returns></returns>
+        public static List<string> RegExMatchValues( string input, string expression )
+        {
+            if ( input == null )
+            {
+                return null;
+            }
+
+            Regex regex = new Regex( expression );
+            var matches = regex.Matches( input );
+
+            // Flatten all matches to single list
+            var captured = matches
+                .Cast<Match>()
+                .Where( m => m.Success == true )
+                .SelectMany( o =>
+                    o.Groups.Cast<Capture>()
+                        .Select( c => c.Value ) );
+
+            return captured.ToList();
+        }
+
+        /// <summary>
         /// The slice filter returns a substring, starting at the specified index.
         /// </summary>
         /// <param name="input">The input string.</param>
@@ -5422,6 +5449,36 @@ namespace Rock.Lava
 
                 return followed;
             }
+        }
+
+        /// <summary>
+        /// Translates a cached object into a fully database-backed entity object.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="input">The input cached object to be translated.</param>
+        /// <returns>An <see cref="IEntity"/> object or the original <paramref name="input"/>.</returns>
+        public static object EntityFromCachedObject( DotLiquid.Context context, object input )
+        {
+            //
+            // Ensure the input is a cached object.
+            //
+            if ( input == null || !( input is IEntityCache cache ) )
+            {
+                return input;
+            }
+
+            //
+            // Ensure the cache object actually inherits from EntityCache.
+            //
+            var entityCacheType = typeof( EntityCache<,> );
+            if ( !cache.GetType().IsDescendentOf( entityCacheType ) )
+            {
+                return input;
+            }
+
+            var entityType = cache.GetType().GetGenericArgumentsOfBaseType( entityCacheType )[1];
+
+            return Rock.Reflection.GetIEntityForEntityType( entityType, cache.Id );
         }
 
         /// <summary>

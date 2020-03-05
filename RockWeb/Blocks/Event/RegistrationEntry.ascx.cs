@@ -3080,7 +3080,8 @@ namespace RockWeb.Blocks.Event
                 }
             }
 
-            if ( familyId.HasValue && location != null )
+            // If we have family ID and a meaninful location then update that info
+            if ( familyId.HasValue && location != null && location.IsMinimumViableAddress() )
             {
                 var familyGroup = new GroupService( rockContext ).Get( familyId.Value );
                 var existingLocation = new LocationService( rockContext ).Get(
@@ -3833,6 +3834,22 @@ namespace RockWeb.Blocks.Event
                 var registrant = RegistrationState.Registrants[CurrentRegistrantIndex];
                 if ( registrant.OnWaitList )
                 {
+                    /*
+                        1/31/2020 - NA 
+                        This conditional if block below comes from SECC via PR #4071 (https://github.com/SparkDevNetwork/Rock/pull/4071).
+                        I attempted to reproduce the problem described in the PR but was unable.
+
+                        After talking this over with the product owner (JME), we decided to accept the Pull Request
+                        because SECC said they've been running with this change in their production environment
+                        "for a few months and it fixed our issues."
+
+                        Reason: Registration entry for waiting lists that have Signature Documents.
+                    */
+                    if ( CurrentFormIndex >= RegistrationTemplate.Forms.Count )
+                    {
+                        return false;
+                    }
+
                     var form = RegistrationTemplate.Forms.OrderBy( f => f.Order ).ToList()[CurrentFormIndex];
                     return form.Fields.Any( f => !f.IsInternal && f.ShowOnWaitlist );
                 }

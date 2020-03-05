@@ -32,7 +32,8 @@ public class BundleConfig
         bundles.ResetAll();
 
         bundles.Add( new ScriptBundle( "~/Scripts/Bundles/RockJQueryLatest" ).Include(
-            "~/Scripts/jquery-3.4.1.min.js" ) );
+            "~/Scripts/jquery-3.4.1.min.js",
+            "~/Scripts/jquery-migrate-3.1.0.min.js" ) );
 
         bundles.Add( new ScriptBundle( "~/Scripts/Bundles/WebFormsJs" ).Include(
             "~/Scripts/WebForms/MsAjax/MicrosoftAjax.js",
@@ -85,6 +86,11 @@ public class BundleConfig
         // to be included for HtmlEditor
         bundles.Add( new ScriptBundle( "~/Scripts/Bundles/RockHtmlEditorPlugins" ).Include(
             "~/Scripts/summernote/plugins/*.js" ) );
+
+        // Creating a separate "StructureContentEditorPlugins" bundle specifically for JS functionality that needs
+        // to be included for HtmlEditor
+        bundles.Add( new ScriptBundle( "~/Scripts/Bundles/StructureContentEditorPlugins" ).Include(
+            "~/Scripts/editor.js/*.js" ) );
 
         // make sure the ConcatenationToken is what we want.  This is supposed to be the default, but it occasionally was an empty string.
         foreach ( var bundle in bundles )

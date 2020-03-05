@@ -147,11 +147,21 @@ namespace RockWeb
                         {
                             using ( var resizedStream = GetResized( context.Request.QueryString, fileContents ) )
                             {
+                                if ( resizedStream.CanSeek )
+                                {
+                                    resizedStream.Seek( 0, SeekOrigin.Begin );
+                                }
+
                                 resizedStream.CopyTo( context.Response.OutputStream );
                             }
                         }
                         else
                         {
+                            if ( fileContents.CanSeek )
+                            {
+                                fileContents.Seek( 0, SeekOrigin.Begin );
+                            }
+
                             fileContents.CopyTo( context.Response.OutputStream );
                         }
 
@@ -314,6 +324,7 @@ namespace RockWeb
                 if ( binaryFileMetaData.BinaryFileType_AllowCaching )
                 {
                     // if binaryFileType is set to allowcaching, also tell the browser to cache it for 365 days
+                    context.Response.Cache.SetCacheability( HttpCacheability.Public );
                     context.Response.Cache.SetLastModified( binaryFileMetaData.ModifiedDateTime );
                     context.Response.Cache.SetMaxAge( new TimeSpan( 365, 0, 0, 0 ) );
                 }

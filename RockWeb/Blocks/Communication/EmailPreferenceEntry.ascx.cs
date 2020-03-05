@@ -45,6 +45,7 @@ namespace RockWeb.Blocks.Communication
     [MemoField( "No Mass Emails Text", "Text to display for the 'No Mass Emails' option.", false, "I am still involved with {{ 'Global' | Attribute:'OrganizationName' }}, but do not wish to receive mass emails (personal emails are fine).", "", 3, null, 3, true )]
     [MemoField( "No Emails Text", "Text to display for the 'No Emails' option.", false, "I am still involved with {{ 'Global' | Attribute:'OrganizationName' }}, but do not want to receive emails of ANY kind.", "", 4, null, 3, true )]
     [MemoField( "Not Involved Text", "Text to display for the 'Not Involved' option.", false, " I am no longer involved with {{ 'Global' | Attribute:'OrganizationName' }}.", "", 5, null, 3, true )]
+    [WorkflowTypeField( "Unsubscribe from List Workflow", "The workflow type to launch for person who wants to unsubscribe from one or more Communication Lists. The person will be passed in as the Entity and the communication list Ids will be passed as a comma delimited string to the workflow 'CommunicationListIds' attribute if it exists.", false, required: false, key: "UnsubscribeWorkflow" )]
     [MemoField( "Success Text", "Text to display after user submits selection.", false, "<h4>Thank You</h4>We have saved your email preference.", "", 6, null, 3, true )]
     [CodeEditorField( "Unsubscribe Success Text", "Text to display after user unsubscribes from communication lists.", CodeEditorMode.Lava, CodeEditorTheme.Rock, 200, false, UNSUBSCRIBE_SUCCESS_TEXT_DEFAULT_VALUE, order: 7 )]
     [TextField( "Reasons to Exclude", "A delimited list of the Inactive Reasons to exclude from Reason list", false, "No Activity,Deceased", "", 8 )]
@@ -227,12 +228,36 @@ We have unsubscribed you from the following lists:
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void btnSubmit_Click( object sender, EventArgs e )
         {
+            var rockContext = new RockContext();
             nbUnsubscribeSuccessMessage.Visible = false;
             nbEmailPreferenceSuccessMessage.Visible = false;
 
             if ( rbUnsubscribe.Checked && rbUnsubscribe.Visible )
             {
-                UnsubscribeFromLists();
+                bool unsubscribed = UnsubscribeFromLists();
+
+                if ( unsubscribed )
+                {
+                    Guid? workflowGuid = GetAttributeValue( "UnsubscribeWorkflow" ).AsGuidOrNull();
+                    WorkflowTypeCache workflowType = null;
+                    var workflowService = new WorkflowService( rockContext );
+
+                    if ( workflowGuid != null )
+                    {
+                        workflowType = WorkflowTypeCache.Get( workflowGuid.Value );
+                    }
+
+                    // Start workflow for this person
+                    if ( workflowType != null )
+                    {
+                        Dictionary<string, string> attributes = new Dictionary<string, string>();
+                        if ( cblUnsubscribeFromLists.SelectedValuesAsInt.Any() )
+                        {
+                            attributes.Add( "CommunicationListIds", cblUnsubscribeFromLists.SelectedValues.ToList().AsDelimited( "," ) );
+                            StartWorkflow( workflowService, workflowType, attributes, string.Format( "{0}", _person.FullName ), _person );
+                        }
+                    }
+                }
                 return;
             }
 
@@ -253,7 +278,6 @@ We have unsubscribed you from the following lists:
 
             if ( _person != null )
             {
-                var rockContext = new RockContext();
                 var service = new PersonService( rockContext );
                 var person = service.Get( _person.Id );
                 if ( person != null )
@@ -341,82 +365,86 @@ We have unsubscribed you from the following lists:
         }
 
         /// <summary>
-        /// Unsubscribes the person from any lists that were selected
+        /// Unsubscribes the person from any lists that were selected.
         /// </summary>
-        private void UnsubscribeFromLists()
+        /// <returns>true if they were actually unsubscribed from something or false otherwise.</returns>
+        private bool UnsubscribeFromLists()
         {
-            if ( _person != null )
+            if ( _person == null )
             {
-                if ( !cblUnsubscribeFromLists.SelectedValuesAsInt.Any() )
+                return false;
+            }
+
+            if ( !cblUnsubscribeFromLists.SelectedValuesAsInt.Any() )
+            {
+                nbUnsubscribeSuccessMessage.NotificationBoxType = NotificationBoxType.Warning;
+                nbUnsubscribeSuccessMessage.Text = "Please select the lists that you want to unsubscribe from.";
+                nbUnsubscribeSuccessMessage.Visible = true;
+                return false;
+            }
+
+            List<Group> unsubscribedGroups = new List<Group>();
+            var rockContext = new RockContext();
+
+            foreach ( var communicationListId in cblUnsubscribeFromLists.SelectedValuesAsInt )
+            {
+                // normally there would be at most 1 group member record for the person, but just in case, mark them all inactive
+                var groupMemberRecordsForPerson = new GroupMemberService( rockContext ).Queryable().Include( a => a.Group ).Where( a => a.GroupId == communicationListId && a.PersonId == _person.Id );
+                foreach ( var groupMember in groupMemberRecordsForPerson.ToList() )
                 {
-                    nbUnsubscribeSuccessMessage.NotificationBoxType = NotificationBoxType.Warning;
-                    nbUnsubscribeSuccessMessage.Text = "Please select the lists that you want to unsubscribe from.";
-                    nbUnsubscribeSuccessMessage.Visible = true;
-                    return;
+                    groupMember.GroupMemberStatus = GroupMemberStatus.Inactive;
+                    if ( groupMember.Note.IsNullOrWhiteSpace() )
+                    {
+                        groupMember.Note = "Unsubscribed";
+                    }
+
+                    unsubscribedGroups.Add( groupMember.Group );
+
+                    rockContext.SaveChanges();
                 }
 
-                List<Group> unsubscribedGroups = new List<Group>();
-                var rockContext = new RockContext();
-
-                foreach ( var communicationListId in cblUnsubscribeFromLists.SelectedValuesAsInt )
+                // if they selected the CommunicationList associated with the CommunicationId from the Url, log an 'Unsubscribe' Interaction 
+                if ( _communication != null && _communication.ListGroupId.HasValue && communicationListId == _communication.ListGroupId )
                 {
-                    // normally there would be at most 1 group member record for the person, but just in case, mark them all inactive
-                    var groupMemberRecordsForPerson = new GroupMemberService( rockContext ).Queryable().Include( a => a.Group ).Where( a => a.GroupId == communicationListId && a.PersonId == _person.Id );
-                    foreach ( var groupMember in groupMemberRecordsForPerson.ToList() )
+                    var communicationRecipient = _communication.GetRecipientsQry( rockContext ).Where( a => a.PersonAlias.PersonId == _person.Id ).FirstOrDefault();
+                    if ( communicationRecipient != null )
                     {
-                        groupMember.GroupMemberStatus = GroupMemberStatus.Inactive;
-                        if ( groupMember.Note.IsNullOrWhiteSpace() )
-                        {
-                            groupMember.Note = "Unsubscribed";
-                        }
+                        var interactionService = new InteractionService( rockContext );
 
-                        unsubscribedGroups.Add( groupMember.Group );
+                        InteractionComponent interactionComponent = new InteractionComponentService( rockContext )
+                                            .GetComponentByEntityId( Rock.SystemGuid.InteractionChannel.COMMUNICATION.AsGuid(), _communication.Id, _communication.Subject );
+
+                        rockContext.SaveChanges();
+
+                        var ipAddress = GetClientIpAddress();
+                        var userAgent = Request.UserAgent ?? "";
+
+                        UAParser.ClientInfo client = UAParser.Parser.GetDefault().Parse( userAgent );
+                        var clientOs = client.OS.ToString();
+                        var clientBrowser = client.UserAgent.ToString();
+                        var clientType = InteractionDeviceType.GetClientType( userAgent );
+
+                        interactionService.AddInteraction( interactionComponent.Id, communicationRecipient.Id, "Unsubscribe", "", communicationRecipient.PersonAliasId, RockDateTime.Now, clientBrowser, clientOs, clientType, userAgent, ipAddress, null );
 
                         rockContext.SaveChanges();
                     }
-
-                    // if they selected the CommunicationList associated with the CommunicationId from the Url, log an 'Unsubscribe' Interaction 
-                    if ( _communication != null && _communication.ListGroupId.HasValue && communicationListId == _communication.ListGroupId )
-                    {
-                        var communicationRecipient = _communication.GetRecipientsQry( rockContext ).Where( a => a.PersonAlias.PersonId == _person.Id ).FirstOrDefault();
-                        if ( communicationRecipient != null )
-                        {
-                            var interactionService = new InteractionService( rockContext );
-
-                            InteractionComponent interactionComponent = new InteractionComponentService( rockContext )
-                                                .GetComponentByEntityId( Rock.SystemGuid.InteractionChannel.COMMUNICATION.AsGuid(), _communication.Id, _communication.Subject );
-
-                            rockContext.SaveChanges();
-
-                            var ipAddress = GetClientIpAddress();
-                            var userAgent = Request.UserAgent ?? "";
-
-                            UAParser.ClientInfo client = UAParser.Parser.GetDefault().Parse( userAgent );
-                            var clientOs = client.OS.ToString();
-                            var clientBrowser = client.UserAgent.ToString();
-                            var clientType = InteractionDeviceType.GetClientType( userAgent );
-
-                            interactionService.AddInteraction( interactionComponent.Id, communicationRecipient.Id, "Unsubscribe", "", communicationRecipient.PersonAliasId, RockDateTime.Now, clientBrowser, clientOs, clientType, userAgent, ipAddress, null );
-
-                            rockContext.SaveChanges();
-                        }
-                    }
                 }
-
-                var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( this.RockPage, this.CurrentPerson );
-                int? communicationId = PageParameter( "CommunicationId" ).AsIntegerOrNull();
-
-                if ( _communication != null )
-                {
-                    mergeFields.Add( "Communication", _communication );
-                }
-
-                mergeFields.Add( "UnsubscribedGroups", unsubscribedGroups );
-
-                nbUnsubscribeSuccessMessage.NotificationBoxType = NotificationBoxType.Success;
-                nbUnsubscribeSuccessMessage.Text = GetAttributeValue( "UnsubscribeSuccessText" ).ResolveMergeFields( mergeFields );
-                nbUnsubscribeSuccessMessage.Visible = true;
             }
+
+            var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( this.RockPage, this.CurrentPerson );
+            int? communicationId = PageParameter( "CommunicationId" ).AsIntegerOrNull();
+
+            if ( _communication != null )
+            {
+                mergeFields.Add( "Communication", _communication );
+            }
+
+            mergeFields.Add( "UnsubscribedGroups", unsubscribedGroups );
+
+            nbUnsubscribeSuccessMessage.NotificationBoxType = NotificationBoxType.Success;
+            nbUnsubscribeSuccessMessage.Text = GetAttributeValue( "UnsubscribeSuccessText" ).ResolveMergeFields( mergeFields );
+            nbUnsubscribeSuccessMessage.Visible = true;
+            return true;
         }
 
         #endregion
@@ -533,6 +561,24 @@ We have unsubscribed you from the following lists:
             ddlInactiveReason.DataTextField = "Name";
             ddlInactiveReason.DataValueField = "Id";
             ddlInactiveReason.DataBind();
+        }
+
+        protected void StartWorkflow( WorkflowService workflowService, WorkflowTypeCache workflowType, Dictionary<string, string> attributes, string workflowNameSuffix, Person p )
+        {
+            // launch workflow if configured
+            if (workflowType != null && (workflowType.IsActive ?? true))
+            {
+                var workflow = Rock.Model.Workflow.Activate( workflowType, "UnsubscribeNotice " + workflowNameSuffix );
+
+                // set attributes
+                foreach (KeyValuePair<string, string> attribute in attributes)
+                {
+                    workflow.SetAttributeValue( attribute.Key, attribute.Value );
+                }
+                // launch workflow
+                List<string> workflowErrors;
+                workflowService.Process( workflow, p, out workflowErrors );
+            }
         }
 
         #endregion

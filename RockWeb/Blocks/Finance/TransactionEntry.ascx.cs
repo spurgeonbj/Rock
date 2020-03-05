@@ -283,7 +283,7 @@ TransactionAccountDetails: [
 
         protected bool DisplayPhone
         {
-            get {return ViewState["DisplayPhone"].ToString().AsBoolean(); }
+            get { return ViewState["DisplayPhone"].ToString().AsBoolean(); }
             set { ViewState["DisplayPhone"] = value; }
         }
         #endregion
@@ -297,6 +297,8 @@ TransactionAccountDetails: [
         protected override void OnInit( EventArgs e )
         {
             base.OnInit( e );
+
+            this.BlockUpdated += TransactionEntry_BlockUpdated;
 
             _allowAccountsInUrl = GetAttributeValue( "AllowAccountsInURL" ).AsBoolean( false );
             _onlyPublicAccountsInUrl = GetAttributeValue( "OnlyPublicAccountsInURL" ).AsBoolean( true );
@@ -338,6 +340,17 @@ TransactionAccountDetails: [
             }
 
             RegisterScript();
+        }
+
+        /// <summary>
+        /// Handles the BlockUpdated event of the TransactionEntry control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        private void TransactionEntry_BlockUpdated( object sender, EventArgs e )
+        {
+            // if block settings have changed, reload the page
+            this.NavigateToCurrentPageReference();
         }
 
         /// <summary>
@@ -461,10 +474,25 @@ TransactionAccountDetails: [
                 return;
             }
 
-            if ( ( _ccGatewayComponent is IHostedGatewayComponent ) || _achGatewayComponent is IHostedGatewayComponent )
+            var ccHostedGatewayComponent = _ccGatewayComponent as IHostedGatewayComponent;
+            var achHostedGatewayComponent = _achGatewayComponent as IHostedGatewayComponent;
+            bool gatewaySupportsUnhostedPayment = true;
+
+            if ( ccHostedGatewayComponent != null && !ccHostedGatewayComponent.GetSupportedHostedGatewayModes( _ccGateway ).Contains( HostedGatewayMode.Unhosted ) )
             {
+                gatewaySupportsUnhostedPayment = false;
+            }
+
+            if ( achHostedGatewayComponent != null && !achHostedGatewayComponent.GetSupportedHostedGatewayModes( _achGateway ).Contains( HostedGatewayMode.Unhosted ) )
+            {
+                gatewaySupportsUnhostedPayment = false;
+            }
+
+            if ( !gatewaySupportsUnhostedPayment )
+            {
+
                 SetPage( 0 );
-                ShowMessage( NotificationBoxType.Danger, "Configuration Error", "Unsupported Gateway. This block does not support Gateways that have a hosted payment interface." );
+                ShowMessage( NotificationBoxType.Danger, "Configuration Error", "Unsupported Gateway. This block does only supports Gateways that have a un-hosted payment interface." );
                 return;
             }
 
@@ -543,7 +571,7 @@ TransactionAccountDetails: [
             }
 
             // Update the total amount
-            lblTotalAmount.Text = GlobalAttributesCache.Value("CurrencySymbol") + SelectedAccounts.Sum( f => f.Amount ).ToString( "F2" );
+            lblTotalAmount.Text = GlobalAttributesCache.Value( "CurrencySymbol" ) + SelectedAccounts.Sum( f => f.Amount ).ToString( "F2" );
 
             // Set the frequency date label based on if 'One Time' is selected or not
             if ( btnFrequency.Items.Count > 0 )
@@ -883,7 +911,7 @@ TransactionAccountDetails: [
 
                         if ( !ScheduleId.HasValue )
                         {
-                            var transaction = new FinancialTransactionService( rockContext ).GetByTransactionCode( (financialGateway != null ? financialGateway.Id : (int?)null), TransactionCode );
+                            var transaction = new FinancialTransactionService( rockContext ).GetByTransactionCode( ( financialGateway != null ? financialGateway.Id : ( int? ) null ), TransactionCode );
                             if ( transaction != null && transaction.AuthorizedPersonAlias != null )
                             {
                                 if ( transaction.FinancialGateway != null )
@@ -1741,7 +1769,7 @@ TransactionAccountDetails: [
                         !string.IsNullOrWhiteSpace( txtLastName.Text ) )
                     {
                         // Same logic as PledgeEntry.ascx.cs
-                        var personQuery = new PersonService.PersonMatchQuery( txtFirstName.Text, txtLastName.Text, txtEmail.Text, pnbPhone.Text.Trim());
+                        var personQuery = new PersonService.PersonMatchQuery( txtFirstName.Text, txtLastName.Text, txtEmail.Text, pnbPhone.Text.Trim() );
                         person = personService.FindPerson( personQuery, true );
                     }
 
@@ -2660,7 +2688,25 @@ TransactionAccountDetails: [
             FinancialPaymentDetail paymentDetail = null;
             if ( schedule != null )
             {
-                var scheduledTransaction = threeStepGateway.AddScheduledPaymentStep3( financialGateway, resultQueryString, out errorMessage );
+                ReferencePaymentInfo referencePaymentInfo = paymentInfo as ReferencePaymentInfo;
+                FinancialScheduledTransaction scheduledTransaction;
+                if ( referencePaymentInfo != null && referencePaymentInfo.GatewayPersonIdentifier.IsNotNullOrWhiteSpace() )
+                {
+                    /* MDP 2020-02-28
+                     * ThreeStepGateway.AddScheduledPaymentStep3 doesn't support using Saved Accounts for scheduled transactions.
+                     * It returns a 'ccnumber is required' error, and we weren't able to find a solution
+                     * So we ended up just disabling SavedAccounts when doing a Scheduled Transaction (prior to v11)
+                     *
+                     * Starting with V11, we can use the DirectPost API to schedule transactions with saved accounts to get around that issue
+                     */
+
+                    // If this is a saved account, we can juse use the regular DirectPost API of the ThreeStepGateway (see above note)
+                    scheduledTransaction = ( threeStepGateway as GatewayComponent ).AddScheduledPayment( financialGateway, schedule, paymentInfo, out errorMessage );
+                }
+                else
+                {
+                    scheduledTransaction = threeStepGateway.AddScheduledPaymentStep3( financialGateway, resultQueryString, out errorMessage );
+                }
                 if ( scheduledTransaction == null )
                 {
                     return false;
@@ -3078,10 +3124,18 @@ TransactionAccountDetails: [
                 NotificationBox nb = nbMessage;
                 switch ( hfCurrentPage.Value.AsInteger() )
                 {
-                    case 1: nb = nbSelectionMessage; break;
-                    case 2: nb = nbSelectionMessage; break;
-                    case 3: nb = nbConfirmationMessage; break;
-                    case 4: nb = nbSuccessMessage; break;
+                    case 1:
+                        nb = nbSelectionMessage;
+                        break;
+                    case 2:
+                        nb = nbSelectionMessage;
+                        break;
+                    case 3:
+                        nb = nbConfirmationMessage;
+                        break;
+                    case 4:
+                        nb = nbSuccessMessage;
+                        break;
                 }
 
                 nb.Text = text;

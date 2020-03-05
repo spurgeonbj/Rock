@@ -123,6 +123,8 @@
                                 <Columns>
                                     <Rock:RockBoundField DataField="Name" HeaderText="Name" />
                                     <Rock:RockBoundField DataField="Description" HeaderText="Description" />
+                                    <Rock:BoolField DataField="IsDefault" HeaderText="Is Default" />
+                                    <Rock:BoolField DataField="IsCritical" HeaderText="Is Critical" />
                                     <Rock:EditField OnClick="gStatuses_Edit" />
                                     <Rock:DeleteField OnClick="gStatuses_Delete" />
                                 </Columns>
@@ -201,6 +203,11 @@
                         <Rock:RockCheckBox ID="cbIsDefault" runat="server" Label="Is Default" ValidationGroup="ConnectionStatus" />
                     </div>
                 </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <Rock:RockCheckBox ID="cbAutoInactivateState" runat="server" Label="Auto-Inactivate State" ValidationGroup="ConnectionStatus" Help="Selecting this status will change the state to Inactive." />
+                    </div>
+                </div>
             </Content>
         </Rock:ModalDialog>
 
@@ -224,6 +231,7 @@
                             <asp:ListItem Value="3" Text="State Changed" />
                             <asp:ListItem Value="4" Text="Activity Added" />
                             <asp:ListItem Value="6" Text="Manual" />
+                            <asp:ListItem Value="9" Text="Future Follow-up Date Reached" />
                         </Rock:RockDropDownList>
                     </div>
                     <div class="col-md-6">

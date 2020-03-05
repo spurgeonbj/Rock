@@ -28,6 +28,7 @@ using System.Web.UI.WebControls;
 
 using Rock;
 using Rock.Attribute;
+using Rock.Communication;
 using Rock.Data;
 using Rock.Model;
 using Rock.Security;
@@ -390,7 +391,7 @@ namespace RockWeb.Blocks.Communication
                 return;
             }
 
-            LoadDropDowns();
+            LoadDropDowns( communication );
 
             hfCommunicationId.Value = communication.Id.ToString();
             lTitle.Text = ( communication.Name ?? communication.Subject ?? "New Communication" ).FormatAsHtmlTitle();
@@ -400,7 +401,6 @@ namespace RockWeb.Blocks.Communication
             tglBulkCommunication.Checked = communication.IsBulkCommunication;
 
             tglRecipientSelection.Checked = communication.Id == 0 || communication.ListGroupId.HasValue;
-            ddlCommunicationGroupList.SetValue( communication.ListGroupId );
 
             var segmentDataviewGuids = communication.Segments.SplitDelimitedValues().AsGuidList();
             if ( segmentDataviewGuids.Any() )
@@ -515,7 +515,8 @@ namespace RockWeb.Blocks.Communication
         /// <summary>
         /// Loads the drop downs.
         /// </summary>
-        private void LoadDropDowns()
+        /// <param name="communication">The communication.</param>
+        private void LoadDropDowns( Rock.Model.Communication communication )
         {
             var rockContext = new RockContext();
 
@@ -533,11 +534,13 @@ namespace RockWeb.Blocks.Communication
                 ddlCommunicationGroupList.Items.Add( new ListItem( communicationGroup.Name, communicationGroup.Id.ToString() ) );
             }
 
+            ddlCommunicationGroupList.SetValue( communication.ListGroupId );
+
             LoadCommunicationSegmentFilters();
 
             rblCommunicationGroupSegmentFilterType.Items.Clear();
-            rblCommunicationGroupSegmentFilterType.Items.Add( new ListItem( "All segment filters", SegmentCriteria.All.ToString() ) { Selected = true } );
-            rblCommunicationGroupSegmentFilterType.Items.Add( new ListItem( "Any segment filters", SegmentCriteria.Any.ToString() ) );
+            rblCommunicationGroupSegmentFilterType.Items.Add( new ListItem( "All segment filters", SegmentCriteria.All.ToString() ) { Selected = communication.SegmentCriteria == SegmentCriteria.All } );
+            rblCommunicationGroupSegmentFilterType.Items.Add( new ListItem( "Any segment filters", SegmentCriteria.Any.ToString() ) { Selected = communication.SegmentCriteria == SegmentCriteria.Any } );
 
             UpdateRecipientListCount();
 
@@ -1087,9 +1090,8 @@ namespace RockWeb.Blocks.Communication
             SetNavigationHistory( pnlCommunicationDelivery );
 
             // Render warnings for any inactive transports (Javascript will hide and show based on Medium Selection)
-            var mediumsWithActiveTransports = Rock.Communication.MediumContainer.Instance.Components.Select( a => a.Value.Value ).Where( x => x.Transport != null && x.Transport.IsActive );
-            bool smsTransportEnabled = mediumsWithActiveTransports.Any( a => a.EntityType.Guid == Rock.SystemGuid.EntityType.COMMUNICATION_MEDIUM_SMS.AsGuid() );
-            bool emailTransportEnabled = mediumsWithActiveTransports.Any( a => a.EntityType.Guid == Rock.SystemGuid.EntityType.COMMUNICATION_MEDIUM_EMAIL.AsGuid() );
+            bool smsTransportEnabled = MediumContainer.HasActiveSmsTransport();
+            bool emailTransportEnabled = MediumContainer.HasActiveEmailTransport();
 
             // See what is allowed by the block settings
             var allowedCommunicationTypes = GetAllowedCommunicationTypes();
@@ -1747,8 +1749,7 @@ namespace RockWeb.Blocks.Communication
             sampleCommunicationRecipient.PersonAlias = sampleCommunicationRecipient.PersonAlias ?? new PersonAliasService( rockContext ).Get( sampleCommunicationRecipient.PersonAliasId );
             var mergeFields = sampleCommunicationRecipient.CommunicationMergeValues( commonMergeFields );
 
-            Rock.Communication.MediumComponent emailMediumWithActiveTransport = Rock.Communication.MediumContainer.Instance.Components.Select( a => a.Value.Value )
-                .Where( x => x.Transport != null && x.Transport.IsActive )
+            Rock.Communication.MediumComponent emailMediumWithActiveTransport = MediumContainer.GetActiveMediumComponentsWithActiveTransports()
                 .Where( a => a.EntityType.Guid == Rock.SystemGuid.EntityType.COMMUNICATION_MEDIUM_EMAIL.AsGuid() ).FirstOrDefault();
 
             string communicationHtml = hfEmailEditorHtml.Value;
@@ -2287,6 +2288,7 @@ sendCountTerm.PluralizeIf( sendCount != 1 ) );
                 communication.Status = CommunicationStatus.Approved;
                 communication.ReviewedDateTime = RockDateTime.Now;
                 communication.ReviewerPersonAliasId = CurrentPersonAliasId;
+                communication.CreatedDateTime = RockDateTime.Now;
 
                 if ( communication.FutureSendDateTime.HasValue &&
                                communication.FutureSendDateTime > RockDateTime.Now )
