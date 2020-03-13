@@ -92,6 +92,13 @@ public class BundleConfig
         bundles.Add( new ScriptBundle( "~/Scripts/Bundles/StructureContentEditorPlugins" ).Include(
             "~/Scripts/editor.js/*.js" ) );
 
+        // Add Rock Rest Block specific scripts
+        bundles.Add( new ScriptBundle( "~/Scripts/Bundles/Obsidian" ).Include(
+            "~/Scripts/Obsidian/axios.js",
+            "~/Scripts/Obsidian/vue.js",
+            "~/Scripts/Obsidian/init.js",
+            "~/Scripts/Obsidian/VueControls/*.js" ) );
+
         // make sure the ConcatenationToken is what we want.  This is supposed to be the default, but it occasionally was an empty string.
         foreach ( var bundle in bundles )
         {
