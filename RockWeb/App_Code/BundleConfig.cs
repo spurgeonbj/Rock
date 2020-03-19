@@ -94,10 +94,11 @@ public class BundleConfig
 
         // Add Rock Rest Block specific scripts
         bundles.Add( new ScriptBundle( "~/Scripts/Bundles/Obsidian" ).Include(
-            "~/Scripts/Obsidian/axios.js",
-            "~/Scripts/Obsidian/vue.js",
-            "~/Scripts/Obsidian/init.js",
-            "~/Scripts/Obsidian/VueControls/*.js" ) );
+            "~/Obsidian/Vendor/axios.js",
+            "~/Obsidian/Vendor/vue.js",
+            "~/Obsidian/Vendor/vue-in-browser.js",
+            "~/Obsidian/init.js",
+            "~/Obsidian/VueControls/*.js" ) );
 
         // make sure the ConcatenationToken is what we want.  This is supposed to be the default, but it occasionally was an empty string.
         foreach ( var bundle in bundles )

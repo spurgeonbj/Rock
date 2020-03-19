@@ -80,9 +80,11 @@ namespace Rock.Obsidian.Blocks
 
             return
 $@"<div id=""{rootElementId}""></div>
-<script type=""text/javascript"" src=""/Obsidian/{BlockMarkupFileIdentifier}.js""></script>
+<script>
+    Obsidian.Util.loadVueFile('/Obsidian/{BlockMarkupFileIdentifier}.vue', '#{rootElementId}');
+</script>
 <script type=""text/javascript"">
-    Obsidian.Blocks['{BlockMarkupFileIdentifier}']({{
+    Obsidian.Blocks['{BlockMarkupFileIdentifier}'] = {{
         rootElement: document.getElementById('{rootElementId}'),
         pageId: {BlockCache.PageId},
         blockId: {BlockCache.Id},
@@ -92,7 +94,7 @@ $@"<div id=""{rootElementId}""></div>
             pageId: {BlockCache.PageId},
             blockId: {BlockCache.Id}
         }})
-    }});
+    }};
 </script>";
         }
 

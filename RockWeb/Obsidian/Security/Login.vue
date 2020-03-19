@@ -1,4 +1,26 @@
-﻿Obsidian.Blocks['Security/Login'] = ({ rootElement, blockAction }) => {
+﻿<template>
+    <div class="login-block obsidian-block">
+        <fieldset>
+            <legend>Login</legend>
+
+            <div class="alert alert-danger" v-if="errorMessage" v-html="errorMessage"></div>
+
+            <form @submit.prevent="submitLogin">
+                <rock-textbox label="Username" v-model="username"></rock-textbox>
+                <rock-textbox label="Password" v-model="password" type="password"></rock-textbox>
+                <rock-checkbox label="Keep me logged in" v-model="rememberMe"></rock-checkbox>
+                <rock-button :is-loading="isLoading" loading-text="Logging In..." label="Log In" class="btn btn-primary" @click="submitLogin" type="submit"></rock-button>
+            </form>
+
+            <rock-button :is-loading="isLoading" label="Forgot Account" class="btn btn-link" @click="onHelpClick"></rock-button>
+
+        </fieldset>
+    </div>
+</template>
+
+<script>
+    const { blockAction } = Obsidian.Blocks['Security/Login'];
+
     const setCookie = (cookie) => {
         let expires = '';
 
@@ -27,8 +49,8 @@
         window.location.href = decodeURIComponent(returnUrl);
     };
 
-    new Vue({
-        el: rootElement,
+    export default {
+        name: 'Security_Login',
         data() {
             return {
                 username: '',
@@ -93,24 +115,6 @@
                     this.isLoading = false;
                 }
             }
-        },
-        template:
-`<div class="login-block obsidian-block">
-    <fieldset>
-        <legend>Login</legend>
-
-        <div class="alert alert-danger" v-if="errorMessage" v-html="errorMessage"></div>
-
-        <form @submit.prevent="submitLogin">
-            <rock-textbox label="Username" v-model="username"></rock-textbox>
-            <rock-textbox label="Password" v-model="password" type="password"></rock-textbox>
-            <rock-checkbox label="Keep me logged in" v-model="rememberMe"></rock-checkbox>
-            <rock-button :is-loading="isLoading" loading-text="Logging In..." label="Log In" class="btn btn-primary" @click="submitLogin" type="submit"></rock-button>
-        </form>
-
-        <rock-button :is-loading="isLoading" label="Forgot Account" class="btn btn-link" @click="onHelpClick"></rock-button>
-
-    </fieldset>
-</div>`
-    });
-};
+        }
+    };
+</script>
