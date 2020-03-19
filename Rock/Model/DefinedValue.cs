@@ -108,6 +108,7 @@ namespace Rock.Model
         /// The <see cref="Rock.Model.DefinedType"/> that this DefinedValue belongs to.
         /// </value>
         [LavaInclude]
+        [DataMember]
         public virtual DefinedType DefinedType { get; set; }
 
         #endregion

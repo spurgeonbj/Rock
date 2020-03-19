@@ -95,7 +95,7 @@
             }
         },
         template:
-`<div class="login-block">
+`<div class="login-block obsidian-block">
     <fieldset>
         <legend>Login</legend>
 

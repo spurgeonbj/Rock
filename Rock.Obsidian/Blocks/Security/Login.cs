@@ -180,7 +180,7 @@ for help. Thank you.",
                 };
             }
 
-            var userLogin = GetAuthenticatedUserLogin(username, password);
+            var userLogin = GetAuthenticatedUserLogin( username, password );
 
             if ( userLogin == null )
             {
