@@ -417,7 +417,7 @@ namespace Rock.Reporting.DataFilter.Person
             panelControls.AddRange( containerControl.Controls.OfType<Control>() );
 
             var control = panelControls.FirstOrDefault( c => c.ID.EndsWith( entityField.UniqueName ) );
-            if ( control != null )
+            if ( control == null )
             {
                 return values.ToJson();
             }
@@ -523,7 +523,7 @@ namespace Rock.Reporting.DataFilter.Person
 
             var entityFields = GetStepAttributes( stepType.Id );
             var entityField = entityFields.FindFromFilterSelection( selectedProperty );
-            if ( entityField != null )
+            if ( entityField == null )
             {
                 return null;
             }
