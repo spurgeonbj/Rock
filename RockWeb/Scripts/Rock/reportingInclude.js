@@ -241,10 +241,10 @@ $(document).ready(function () {
                     var compareTypeText = $('.js-filter-compare', $selectedContent).find(':selected').text();
 
                     var compareValueText = $('input[type=text].js-filter-control', $selectedContent).val(); // textbox value.
-                    if (compareValueText == "") {
+                    if (!compareValueText || compareValueText == "") {
                         compareValueText = $('.js-filter-control', $selectedContent).find(':selected').map(function () { return this.text; }).get().join("', '");
                     }
-                    if (compareValueText == "") {
+                    if (!compareValueText || compareValueText == "") {
                         compareValueText = $('.js-filter-control', $selectedContent).find(':checked').next().map(function () { return $(this).text(); }).get().join("', '");
                     }
 
