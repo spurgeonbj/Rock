@@ -38,8 +38,8 @@ namespace Rock.Reporting.DataFilter.Person
     /// </summary>
     [Description( "Filter Person records on the attribute values of a Step they have participated in" )]
     [Export( typeof( DataFilterComponent ) )]
-    [ExportMetadata( "ComponentName", "Step Attributes Values Filter" )]
-    public class StepsAttributeValuesFilter : EntityFieldFilter
+    [ExportMetadata( "ComponentName", "Step Participants By Attribute Value Filter" )]
+    public class StepParticipantsByAttributeValueFilter : EntityFieldFilter
     {
 
         #region Fields
