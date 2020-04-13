@@ -83,7 +83,7 @@ namespace Rock.Reporting.DataFilter.Person
         /// <returns></returns>
         public override string GetTitle( Type entityType )
         {
-            return "Step Attribute Values";
+            return "Step Participants By Attribute Value";
         }
 
         /// <summary>
