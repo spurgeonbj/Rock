@@ -152,7 +152,7 @@ namespace RockWeb.Blocks.Core
 
             if ( !signatureDocumentTemplate.IsValid )
             {
-                // Controls will render the error messages                    
+                // Controls will render the error messages
                 return;
             }
 

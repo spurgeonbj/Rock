@@ -38,17 +38,62 @@ using System.Data.Entity;
 namespace RockWeb.Blocks.Cms
 {
     /// <summary>
-    /// 
+    ///
     /// </summary>
     [DisplayName("Content Channel Item Detail")]
     [Category("CMS")]
     [Description("Displays the details for a content channel item.")]
 
-    [LinkedPage( "Event Occurrence Page", order: 0, required: false )]
-    [BooleanField( "Show Delete Button", "Shows a delete button for the current item.", false, order: 1 )]
-    [ContentChannelField("Content Channel", "If set the block will ignore content channel query parameters", false)]
+    #region Block Attributes
+
+    [LinkedPage(
+        "Event Occurrence Page",
+        Order = 0,
+        IsRequired = false,
+        Key = AttributeKey.EventOccurrencePage )]
+    [BooleanField(
+        "Show Delete Button",
+        Description = "Shows a delete button for the current item.",
+        DefaultBooleanValue = false,
+        Order = 1,
+        Key = AttributeKey.ShowDeleteButton )]
+    [ContentChannelField(
+        "Content Channel",
+        Description = "If set the block will ignore content channel query parameters",
+        IsRequired = false,
+        Key = AttributeKey.ContentChannel )]
+
+    #endregion Block Attributes
     public partial class ContentChannelItemDetail : RockBlock, IDetailBlock
     {
+        #region Attribute Keys
+
+        private static class AttributeKey
+        {
+            public const string EventOccurrencePage = "EventOccurrencePage";
+            public const string ShowDeleteButton = "ShowDeleteButton";
+            public const string ContentChannel = "ContentChannel";
+        }
+
+        #endregion Attribute Keys
+
+        #region Page Parameter Keys
+
+        /// <summary>
+        /// Keys to use for Page Parameters
+        /// </summary>
+        private static class PageParameterKey
+        {
+            public const string ContentItemId = "ContentItemId";
+            public const string ContentChannelId = "ContentChannelId";
+            public const string EventItemOccurrenceId = "EventItemOccurrenceId";
+            public const string EventCalendarId = "EventCalendarId";
+            public const string EventItemId = "EventItemId";
+            public const string Hierarchy = "Hierarchy";
+        }
+
+        #endregion
+
         #region Fields
 
         private string _pendingCss = "btn-default";
@@ -91,7 +136,7 @@ namespace RockWeb.Blocks.Cms
             set { _deniedCss = value; }
         }
 
-        private string _jsScript = @"$('#{0} .btn-toggle').click(function (e) {{
+        private string _jsScript = @"$('#{0} .btn-toggle').on('click', function (e) {{
 
                     e.stopImmediatePropagation();
 
@@ -112,14 +157,14 @@ namespace RockWeb.Blocks.Cms
                 }});
 
                 $(document).ready( function() {{
-        
+
                     window.addEventListener('beforeunload', function(e) {{
                         if ( $('#{2}').val() == 'true' ) {{
                             var timeout = setTimeout( function() {{
                                 $('#updateProgress').hide();
                             }}, 1000 );
 
-                            var confirmMessage = 'You have not saved your changes. Are you sure you want to continue?';    
+                            var confirmMessage = 'You have not saved your changes. Are you sure you want to continue?';
                             ( e || window.event).returnValue = confirmMessage;
                             return confirmMessage;
                         }}
@@ -200,14 +245,14 @@ namespace RockWeb.Blocks.Cms
 
             if ( !Page.IsPostBack )
             {
-                if (string.IsNullOrWhiteSpace(GetAttributeValue("ContentChannel")))
+                if (string.IsNullOrWhiteSpace(GetAttributeValue( AttributeKey.ContentChannel )))
                 {
-                    ShowDetail(PageParameter("contentItemId").AsInteger(), PageParameter("contentChannelId").AsIntegerOrNull());
+                    ShowDetail(PageParameter( PageParameterKey.ContentItemId ).AsInteger(), PageParameter( PageParameterKey.ContentChannelId ).AsIntegerOrNull());
                 }
                 else
                 {
-                    var contentChannel = GetAttributeValue("ContentChannel").AsGuid();
-                    ShowDetail(PageParameter("contentItemId").AsInteger(), new ContentChannelService(new RockContext()).Get(GetAttributeValue("ContentChannel").AsGuid()).Id);
+                    var contentChannel = GetAttributeValue( AttributeKey.ContentChannel ).AsGuid();
+                    ShowDetail( PageParameter( PageParameterKey.ContentItemId ).AsInteger(), new ContentChannelService( new RockContext() ).Get( GetAttributeValue( AttributeKey.ContentChannel ).AsGuid() ).Id );
                 }
             }
             else
@@ -233,7 +278,7 @@ namespace RockWeb.Blocks.Cms
             var breadCrumbs = new List<BreadCrumb>();
 
             var itemIds = GetNavHierarchy().AsIntegerList();
-            int? itemId = PageParameter( pageReference, "contentItemId" ).AsIntegerOrNull();
+            int? itemId = PageParameter( pageReference, PageParameterKey.ContentItemId ).AsIntegerOrNull();
             if ( itemId != null )
             {
                 itemIds.Add( itemId.Value );
@@ -273,7 +318,15 @@ namespace RockWeb.Blocks.Cms
                 ( IsUserAuthorized( Authorization.EDIT ) || contentItem.IsAuthorized( Authorization.EDIT, CurrentPerson ) ) )
             {
                 contentItem.Title = tbTitle.Text;
-                contentItem.Content = htmlContent.Text;
+                if ( htmlContent.Visible )
+                {
+                    contentItem.Content = htmlContent.Text;
+                }
+                else
+                {
+                    contentItem.StructuredContent = sceContent.StructuredContent;
+                    contentItem.Content = sceContent.HtmlContent;
+                }
                 contentItem.Priority = nbPriority.Text.AsInteger();
                 contentItem.ItemGlobalKey = contentItem.Id != 0 ? lblItemGlobalKey.Text : CreateItemGlobalKey();
 
@@ -334,7 +387,7 @@ namespace RockWeb.Blocks.Cms
 
                 if ( !Page.IsValid || !contentItem.IsValid )
                 {
-                    // Controls will render the error messages                    
+                    // Controls will render the error messages
                     return;
                 }
 
@@ -355,7 +408,7 @@ namespace RockWeb.Blocks.Cms
                         taglTags.SaveTagValues( CurrentPersonAlias );
                     }
 
-                    int? eventItemOccurrenceId = PageParameter( "EventItemOccurrenceId" ).AsIntegerOrNull();
+                    int? eventItemOccurrenceId = PageParameter( PageParameterKey.EventItemOccurrenceId ).AsIntegerOrNull();
                     if ( eventItemOccurrenceId.HasValue )
                     {
                         var occurrenceChannelItemService = new EventItemOccurrenceChannelItemService( rockContext );
@@ -501,7 +554,7 @@ namespace RockWeb.Blocks.Cms
                     // If the list was filtered due to VIEW security, don't sort it
                     if ( !isFiltered )
                     {
-                        var service = new ContentChannelItemService( rockContext );
+                        var service = new ContentChannelItemAssociationService( rockContext );
                         service.Reorder( items, e.OldIndex, e.NewIndex );
                         rockContext.SaveChanges();
                     }
@@ -542,8 +595,8 @@ namespace RockWeb.Blocks.Cms
             if ( channelId.HasValue )
             {
                 var qryParams = new Dictionary<string, string>();
-                qryParams.Add( "contentItemId", "0" );
-                qryParams.Add( "contentChannelId", channelId.Value.ToString() );
+                qryParams.Add( "ContentItemId", "0" );
+                qryParams.Add( "ContentChannelId", channelId.Value.ToString() );
 
                 var hierarchy = GetNavHierarchy();
                 hierarchy.Add( hfId.Value );
@@ -736,6 +789,7 @@ namespace RockWeb.Blocks.Cms
             {
                 contentItem = contentItemService
                     .Queryable( "ContentChannel,ContentChannelType" )
+                    .Include( cci => cci.ChildItems.Select( cca => cca.ContentChannelItem ) )
                     .FirstOrDefault( t => t.Id == contentItemId );
             }
 
@@ -846,7 +900,7 @@ namespace RockWeb.Blocks.Cms
                 pnlEditDetails.Visible = true;
 
                 // show/hide the delete button
-                lbDelete.Visible = GetAttributeValue( "ShowDeleteButton" ).AsBoolean() && contentItem.Id != 0;
+                lbDelete.Visible = GetAttributeValue( AttributeKey.ShowDeleteButton ).AsBoolean() && contentItem.Id != 0;
 
                 hfId.Value = contentItem.Id.ToString();
                 hfChannelId.Value = contentItem.ContentChannelId.ToString();
@@ -908,23 +962,37 @@ namespace RockWeb.Blocks.Cms
                 rSlugs.DataSource =  contentItem.ContentChannelItemSlugs;
                 rSlugs.DataBind();
 
-                htmlContent.Visible = !contentItem.ContentChannelType.DisableContentField;
-                htmlContent.Text = contentItem.Content;
-                htmlContent.MergeFields.Clear();
-                htmlContent.MergeFields.Add( "GlobalAttribute" );
-                htmlContent.MergeFields.Add( "Rock.Model.ContentChannelItem|Current Item" );
-                htmlContent.MergeFields.Add( "Rock.Model.Person|Current Person" );
-                htmlContent.MergeFields.Add( "Campuses" );
-                htmlContent.MergeFields.Add( "RockVersion" );
-
-                if ( !string.IsNullOrWhiteSpace( contentItem.ContentChannel.RootImageDirectory ) )
+                htmlContent.Visible = false;
+                sceContent.Visible = false;
+                if ( !contentItem.ContentChannelType.DisableContentField )
                 {
-                    htmlContent.DocumentFolderRoot = contentItem.ContentChannel.RootImageDirectory;
-                    htmlContent.ImageFolderRoot = contentItem.ContentChannel.RootImageDirectory;
+                    if ( contentItem.ContentChannel.IsStructuredContent )
+                    {
+                        sceContent.StructuredContent = contentItem.StructuredContent;
+                        sceContent.StructuredContentToolValueId = contentItem.ContentChannel.StructuredContentToolValueId;
+                        sceContent.Visible = true;
+                    }
+                    else
+                    {
+                        htmlContent.Text = contentItem.Content;
+                        htmlContent.Visible = true;
+                        htmlContent.MergeFields.Clear();
+                        htmlContent.MergeFields.Add( "GlobalAttribute" );
+                        htmlContent.MergeFields.Add( "Rock.Model.ContentChannelItem|Current Item" );
+                        htmlContent.MergeFields.Add( "Rock.Model.Person|Current Person" );
+                        htmlContent.MergeFields.Add( "Campuses" );
+                        htmlContent.MergeFields.Add( "RockVersion" );
+
+                        if ( !string.IsNullOrWhiteSpace( contentItem.ContentChannel.RootImageDirectory ) )
+                        {
+                            htmlContent.DocumentFolderRoot = contentItem.ContentChannel.RootImageDirectory;
+                            htmlContent.ImageFolderRoot = contentItem.ContentChannel.RootImageDirectory;
+                        }
+
+                        htmlContent.StartInCodeEditorMode = contentItem.ContentChannel.ContentControlType == ContentControlType.CodeEditor;
+                    }
                 }
-
-                htmlContent.StartInCodeEditorMode = contentItem.ContentChannel.ContentControlType == ContentControlType.CodeEditor;
-
+               
                 if ( contentItem.ContentChannelType.IncludeTime )
                 {
                     dpStart.Visible = false;
@@ -963,7 +1031,7 @@ namespace RockWeb.Blocks.Cms
                     .Select( o => o.EventItemOccurrence ) )
                 {
                     var qryParams = new Dictionary<string, string> { { "EventItemOccurrenceId", occurrence.Id.ToString() } };
-                    string url = LinkedPageUrl( "EventOccurrencePage", qryParams );
+                    string url = LinkedPageUrl( AttributeKey.EventOccurrencePage, qryParams );
                     var hlOccurrence = new HighlightLabel();
                     hlOccurrence.LabelType = LabelType.Info;
                     hlOccurrence.ID = string.Format( "hlOccurrence_{0}", occurrence.Id );
@@ -1034,7 +1102,7 @@ namespace RockWeb.Blocks.Cms
         private void NavigateToNewItem( string itemId )
         {
             var qryParams = new Dictionary<string, string>();
-            qryParams.Add( "contentItemId", itemId );
+            qryParams.Add( "ContentItemId", itemId );
 
             var hierarchy = GetNavHierarchy();
             hierarchy.Add( hfId.Value );
@@ -1064,11 +1132,11 @@ namespace RockWeb.Blocks.Cms
         {
             var qryParams = new Dictionary<string, string>();
 
-            int? eventItemOccurrenceId = PageParameter( "EventItemOccurrenceId" ).AsIntegerOrNull();
+            int? eventItemOccurrenceId = PageParameter( PageParameterKey.EventItemOccurrenceId ).AsIntegerOrNull();
             if ( eventItemOccurrenceId.HasValue )
             {
-                qryParams.Add( "EventCalendarId", PageParameter( "EventCalendarId" ) );
-                qryParams.Add( "EventItemId", PageParameter( "EventItemId" ) );
+                qryParams.Add( "EventCalendarId", PageParameter( PageParameterKey.EventCalendarId ) );
+                qryParams.Add( "EventItemId", PageParameter( PageParameterKey.EventItemId ) );
                 qryParams.Add( "EventItemOccurrenceId", eventItemOccurrenceId.Value.ToString() );
                 qryParams.Add( "ContentChannelId", hfChannelId.Value );
                 NavigateToParentPage( qryParams );
@@ -1133,7 +1201,7 @@ namespace RockWeb.Blocks.Cms
                 }
                 else
                 {
-                    items = items.OrderByDescending( p => p.StartDateTime ).ToList();
+                    items = items.OrderByDescending( p => p.ChildContentChannelItem.StartDateTime ).ToList();
                 }
             }
 
@@ -1142,13 +1210,13 @@ namespace RockWeb.Blocks.Cms
 
             gChildItems.DataSource = items.Select( i => new
             {
-                i.Id,
-                i.Guid,
-                i.Title,
-                i.StartDateTime,
-                ExpireDateTime = i.ContentChannelType.DateRangeType == ContentChannelDateType.DateRange ? i.ExpireDateTime : (DateTime?)null,
-                Priority = i.ContentChannelType.DisablePriority ? (int?)null : (int?)i.Priority,
-                Status = (i.ContentChannel.RequiresApproval && !i.ContentChannelType.DisableStatus) ? DisplayStatus( i.Status ) : string.Empty,
+                i.ChildContentChannelItem.Id,
+                i.ChildContentChannelItem.Guid,
+                i.ChildContentChannelItem.Title,
+                i.ChildContentChannelItem.StartDateTime,
+                ExpireDateTime = i.ChildContentChannelItem.ContentChannelType.DateRangeType == ContentChannelDateType.DateRange ? i.ChildContentChannelItem.ExpireDateTime : ( DateTime? ) null,
+                Order = contentItem.ContentChannel.ChildItemsManuallyOrdered ? ( int? ) i.Order : ( int? ) null,
+                Status = ( i.ChildContentChannelItem.ContentChannel.RequiresApproval && !i.ChildContentChannelItem.ContentChannelType.DisableStatus ) ? DisplayStatus( i.ChildContentChannelItem.Status ) : string.Empty,
                 CreatedBy = i.CreatedByPersonAlias != null && i.CreatedByPersonAlias.Person != null ? i.CreatedByPersonAlias.Person.NickName + " " + i.CreatedByPersonAlias.Person.LastName : string.Empty
             } ).ToList();
 
@@ -1166,7 +1234,7 @@ namespace RockWeb.Blocks.Cms
             }
             else
             {
-                items = items.OrderByDescending( p => p.StartDateTime ).ToList();
+                items = items.OrderByDescending( p => p.ChildContentChannelItem.StartDateTime ).ToList();
             }
 
             gParentItems.ObjectList = new Dictionary<string, object>();
@@ -1174,26 +1242,26 @@ namespace RockWeb.Blocks.Cms
 
             gParentItems.DataSource = items.Select( i => new
             {
-                i.Id,
-                i.Guid,
-                i.Title,
-                StartDateTime = i.ContentChannelType.DateRangeType != ContentChannelDateType.NoDates ? i.StartDateTime : (DateTime?)null,
-                ExpireDateTime = i.ContentChannelType.DateRangeType == ContentChannelDateType.DateRange ? i.ExpireDateTime : (DateTime?)null,
-                Priority = i.ContentChannelType.DisablePriority ? (int?)null : (int?)i.Priority,
-                Status = (i.ContentChannel.RequiresApproval && !i.ContentChannelType.DisableStatus) ? DisplayStatus( i.Status ) : string.Empty,
+                i.ChildContentChannelItem.Id,
+                i.ChildContentChannelItem.Guid,
+                i.ChildContentChannelItem.Title,
+                StartDateTime = i.ChildContentChannelItem.ContentChannelType.DateRangeType != ContentChannelDateType.NoDates ? i.ChildContentChannelItem.StartDateTime : ( DateTime? ) null,
+                ExpireDateTime = i.ChildContentChannelItem.ContentChannelType.DateRangeType == ContentChannelDateType.DateRange ? i.ChildContentChannelItem.ExpireDateTime : ( DateTime? ) null,
+                Order = contentItem.ContentChannel.ChildItemsManuallyOrdered ? ( int? ) null : ( int? ) i.ChildContentChannelItem.Order,
+                Status = ( i.ChildContentChannelItem.ContentChannel.RequiresApproval && !i.ChildContentChannelItem.ContentChannelType.DisableStatus ) ? DisplayStatus( i.ChildContentChannelItem.Status ) : string.Empty,
                 CreatedBy = i.CreatedByPersonAlias != null && i.CreatedByPersonAlias.Person != null ? i.CreatedByPersonAlias.Person.NickName + " " + i.CreatedByPersonAlias.Person.LastName : string.Empty
             } ).ToList();
             gParentItems.DataBind();
         }
 
-        private List<ContentChannelItem> GetChildItems( ContentChannelItem contentItem, out bool isFiltered )
+        private List<ContentChannelItemAssociation> GetChildItems( ContentChannelItem contentItem, out bool isFiltered )
         {
             isFiltered = false;
-            var items = new List<ContentChannelItem>();
+            var items = new List<ContentChannelItemAssociation>();
 
-            foreach ( var item in contentItem.ChildItems.Select( a => a.ChildContentChannelItem ).ToList() )
+            foreach ( var item in contentItem.ChildItems.ToList() )
             {
-                if ( item.IsAuthorized( Authorization.VIEW, CurrentPerson ) )
+                if ( item.ContentChannelItem.IsAuthorized( Authorization.VIEW, CurrentPerson ) )
                 {
                     items.Add( item );
                 }
@@ -1206,13 +1274,13 @@ namespace RockWeb.Blocks.Cms
             return items;
         }
 
-        private List<ContentChannelItem> GetParentItems( ContentChannelItem contentItem )
+        private List<ContentChannelItemAssociation> GetParentItems( ContentChannelItem contentItem )
         {
-            var items = new List<ContentChannelItem>();
+            var items = new List<ContentChannelItemAssociation>();
 
-            foreach ( var item in contentItem.ParentItems.Select( a => a.ContentChannelItem ).ToList() )
+            foreach ( var item in contentItem.ParentItems.ToList() )
             {
-                if ( item.IsAuthorized( Authorization.VIEW, CurrentPerson ) )
+                if ( item.ContentChannelItem.IsAuthorized( Authorization.VIEW, CurrentPerson ) )
                 {
                     items.Add( item );
                 }
@@ -1288,7 +1356,7 @@ namespace RockWeb.Blocks.Cms
 
         private List<string> GetNavHierarchy()
         {
-            var qryParam = PageParameter( "Hierarchy" );
+            var qryParam = PageParameter( PageParameterKey.Hierarchy );
             if ( !string.IsNullOrWhiteSpace( qryParam ) )
             {
                 return qryParam.SplitDelimitedValues( false ).ToList();

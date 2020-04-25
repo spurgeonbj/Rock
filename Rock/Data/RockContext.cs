@@ -30,7 +30,7 @@ namespace Rock.Data
     /// Helper class to set view cache
     /// </summary>
     [RockObsolete( "1.8" )]
-    [Obsolete( "Does nothing. No longer needed," )]
+    [Obsolete( "Does nothing. No longer needed,", true )]
     public static class RockInteractiveViews
     {
         /// <summary>
@@ -38,7 +38,7 @@ namespace Rock.Data
         /// </summary>
         /// <param name="path">The path.</param>
         [RockObsolete( "1.8" )]
-        [Obsolete("Does nothing. No longer needed,")]
+        [Obsolete("Does nothing. No longer needed,", true )]
         public static void SetViewFactory( string path )
         {
         }
@@ -1132,6 +1132,14 @@ namespace Rock.Data
         /// The SMS actions.
         /// </value>
         public DbSet<SmsAction> SmsActions { get; set; }
+
+        /// <summary>
+        /// Gets or sets the SMS pipeline.
+        /// </summary>
+        /// <value>
+        /// The SMS pipelines.
+        /// </value>
+        public DbSet<SmsPipeline> SmsPipelines { get; set; }
 
         /// <summary>
         /// Gets or sets the Interactions.

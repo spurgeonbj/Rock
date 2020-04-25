@@ -82,19 +82,14 @@ namespace Rock.SystemGuid
         public const string DATA_MIGRATIONS_103_SPIRITUAL_GIFTS = "B16F889F-3349-4CA9-976D-7EF098DD8BC6";
 
         /// <summary>
+        /// The Job to run Post v10.3 Data Migrations for Spiritual Gifts Assessment updates
+        /// </summary>
+        public const string DATA_MIGRATIONS_110_POPULATE_DATE_KEYS = "E56FD4FC-02F8-4A46-A91D-E86C2B635870";
+
+        /// <summary>
         /// The Job to Migrate pre-v8.0 History Summary Data
         /// </summary>
         public const string MIGRATE_HISTORY_SUMMARY_DATA = "CF2221CC-1E0A-422B-B0F7-5D81AF1DDB14";
-
-        /// <summary>
-        /// The Job to Migrate pre-v7.0 PageViews and Communication Recipient Activity to Interactions
-        /// </summary>
-        public static string MIGRATE_INTERACTIONS_DATA = "189AE3F1-92E9-4394-ACC5-0F244967F32E";
-
-        /// <summary>
-        /// The job to migrate pre-v7.0 Communication Medium data from JSON to regular fields
-        /// </summary>
-        public static string MIGRATE_COMMUNICATION_MEDIUM_DATA = "E7C54AAB-451E-4E89-8083-CF398D37416E";
 
         /// <summary>
         /// The Job to get NCOA
@@ -106,5 +101,20 @@ namespace Rock.SystemGuid
         /// <see cref="Rock.Transactions.StreakTypeRebuildTransaction" />
         /// </summary>
         public const string REBUILD_STREAK = "BFBB9524-10E8-42CF-BCD3-0CC7D2B22C3A";
+
+        /// <summary>
+        /// The rock cleanup Job. <see cref="Rock.Jobs.RockCleanup"/>
+        /// </summary>
+        public const string ROCK_CLEANUP = "1A8238B1-038A-4295-9FDE-C6D93002A5D7";
+
+        /// <summary>
+        /// The steps automation job - add steps based on people in a dataview
+        /// </summary>
+        public const string STEPS_AUTOMATION = "97858941-0447-49D6-9E35-B03665FEE965";
+
+        /// <summary>
+        /// The collect hosting metrcis job - collect metrics regarding database connections, Etc.
+        /// </summary>
+        public const string COLLECT_HOSTING_METRICS = "36FA38CA-9DB0-40A8-BABD-5411121B4809";
     }
 }
