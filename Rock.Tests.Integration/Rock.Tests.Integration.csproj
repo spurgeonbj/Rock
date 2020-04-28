@@ -102,6 +102,7 @@
     <Compile Include="Jobs\RockJobListenerTestJob.cs" />
     <Compile Include="Jobs\SendPrayerCommentsJobTests.cs" />
     <Compile Include="Jobs\RockJobListenerTests.cs" />
+    <Compile Include="Lava\SystemSettingsAttributeFilter.cs" />
     <Compile Include="Rock.Logging\RockLoggingHelpers.cs" />
     <Compile Include="StorageTests\AzureCloudComponentTests.cs" />
     <Compile Include="TestFramework\DatabaseIntegrationTestClassBase.cs" />
