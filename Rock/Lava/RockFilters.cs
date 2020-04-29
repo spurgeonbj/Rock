@@ -2194,6 +2194,13 @@ namespace Rock.Lava
                 }
             }
 
+            /*
+                04/28/2020 - Shaun
+                The "SystemSetting" filter argument does not retrieve the Attribute from the database
+                or perform any authorization checks.  It simply returns the value of the of the specified
+                SystemSetting attribute (with any merge fields evaluated).  This is intentional.
+            */
+
             // If Input is "SystemSetting" then look for a SystemSetting attribute with key
             else if ( input.ToString().Equals( "SystemSetting", StringComparison.OrdinalIgnoreCase ) )
             {
@@ -2217,7 +2224,6 @@ namespace Rock.Lava
                     rawValue = theValue;
                 }
 
-                //ToDo:  Should this use some workaround to load the attribute to verify authorization?
                 return rawValue;
             }
 
