@@ -880,7 +880,6 @@ namespace RockWeb.Blocks.Groups
                         // Create new credit transaction (to cancel-out the original transaction).
                         creditTransaction = new FinancialTransaction();
                         creditTransaction.CopyPropertiesFrom( oldTransaction );
-                        creditTransaction.CopyAttributesFrom( oldTransaction );
                         creditTransaction.Id = 0; // Reset Id to 0 as this is a new record.
                         creditTransaction.Guid = Guid.NewGuid();
                         creditTransaction.BatchId = transferBatch.Id;
@@ -894,7 +893,6 @@ namespace RockWeb.Blocks.Groups
 
                         creditTransaction.FinancialPaymentDetail = new FinancialPaymentDetail();
                         creditTransaction.FinancialPaymentDetail.CopyPropertiesFrom( oldTransaction.FinancialPaymentDetail );
-                        creditTransaction.FinancialPaymentDetail.CopyAttributesFrom( oldTransaction.FinancialPaymentDetail );
                         creditTransaction.FinancialPaymentDetail.Id = 0; // Reset Id to 0 as this is a new record.
                         creditTransaction.FinancialPaymentDetail.Guid = Guid.NewGuid();
                         transactionService.Add( creditTransaction );
@@ -902,11 +900,10 @@ namespace RockWeb.Blocks.Groups
                         // Create new transaction (to replace the original transaction).
                         newTransaction = new FinancialTransaction();
                         newTransaction.CopyPropertiesFrom( oldTransaction );
-                        newTransaction.CopyAttributesFrom( oldTransaction );
                         newTransaction.Id = 0; // Reset Id to 0 as this is a new record.
                         newTransaction.Guid = Guid.NewGuid();
                         newTransaction.BatchId = transferBatch.Id;
-                        creditTransaction.Summary = string.Format(
+                        newTransaction.Summary = string.Format(
                             "New transaction to replace {0} (moved Fundraising Donations from group {1} to {2}).{3}{4}",
                             oldTransaction.Id,
                             oldGroup.Id,
@@ -916,15 +913,14 @@ namespace RockWeb.Blocks.Groups
 
                         newTransaction.FinancialPaymentDetail = new FinancialPaymentDetail();
                         newTransaction.FinancialPaymentDetail.CopyPropertiesFrom( oldTransaction.FinancialPaymentDetail );
-                        newTransaction.FinancialPaymentDetail.CopyAttributesFrom( oldTransaction.FinancialPaymentDetail );
                         newTransaction.FinancialPaymentDetail.Id = 0; // Reset Id to 0 as this is a new record.
                         newTransaction.FinancialPaymentDetail.Guid = Guid.NewGuid();
                         transactionService.Add( newTransaction );
 
                         rockContext.SaveChanges();
 
-                        // Only do this once.  If there is more than one record in the TransactionDetails collection, we'll use the same
-                        // FinancialTransaction objects.
+                        // Only do this once per transactin.  If there is more than one record in the TransactionDetails
+                        // collection, we'll use the same FinancialTransaction objects.
                         transactionObjectMoved = true;
                     }
 
@@ -938,13 +934,12 @@ namespace RockWeb.Blocks.Groups
                     // Make the new transaction details.
                     var creditTransDetail = new FinancialTransactionDetail();
                     creditTransDetail.CopyPropertiesFrom( oldTransDetail );
-                    creditTransDetail.CopyAttributesFrom( oldTransDetail );
                     creditTransDetail.Id = 0; // Reset Id to 0 as this is a new record.
                     creditTransDetail.Guid = Guid.NewGuid();
                     creditTransDetail.Amount = oldTransDetail.Amount * -1; // Set amount to negative to cancel-out the original transaction.
                     creditTransDetail.TransactionId = creditTransaction.Id; // Assign this detail record to the credit transaction.
                     creditTransDetail.Summary = string.Format(
-                        "Credit to replace FinancialTransactionDetail {0}.{1}{2}",
+                        "Credit for FinancialTransactionDetail {0}.{1}{2}",
                         oldTransDetail.Id,
                         Environment.NewLine,
                         creditTransDetail.Summary );
@@ -952,7 +947,6 @@ namespace RockWeb.Blocks.Groups
 
                     var newTransDetail = new FinancialTransactionDetail();
                     newTransDetail.CopyPropertiesFrom( oldTransDetail );
-                    newTransDetail.CopyAttributesFrom( oldTransDetail );
                     newTransDetail.Id = 0; // Reset Id to 0 as this is a new record.
                     newTransDetail.Guid = Guid.NewGuid();
                     newTransDetail.AccountId = newFinancialAccount.Id; // Set new AccountID.
