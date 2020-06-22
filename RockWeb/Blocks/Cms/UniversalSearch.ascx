@@ -121,6 +121,7 @@
                     var selector = ".js-entity-id-" + entityId + " input";
 
                     $(selector).prop("checked", $(this).is(':checked'));
+                    $(selector).prop("disabled", !$(this).is(':checked'));
                 });
             });
         </script>

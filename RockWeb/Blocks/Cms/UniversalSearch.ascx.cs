@@ -187,8 +187,6 @@ namespace RockWeb.Blocks.Cms
             // this event gets fired after block settings are updated. it's nice to repaint the screen if these settings would alter it
             this.BlockUpdated += Block_BlockUpdated;
             this.AddConfigurationUpdateTrigger( upnlContent );
-
-            LoadCustomFilters();
         }
 
         /// <summary>
@@ -198,6 +196,7 @@ namespace RockWeb.Blocks.Cms
         protected override void OnLoad( EventArgs e )
         {
             base.OnLoad( e );
+            //ConfigureSettings();
 
             if ( !Page.IsPostBack )
             {
@@ -599,8 +598,10 @@ namespace RockWeb.Blocks.Cms
         /// <summary>
         /// Builds the URL.
         /// </summary>
+        /// <param name="pageOffset">The page offset.</param>
+        /// <param name="respectSmartSearch">Respect smart search flag allows a search that started as a smart search to be converted to a normal search via refining the search</param>
         /// <returns></returns>
-        private string BuildUrl( int pageOffset = 0, bool respectSmartSearch = true ) // respect smart search flag allows a search that started as a smart search to be converted to a normal search via refining the search
+        private string BuildUrl( int pageOffset = 0, bool respectSmartSearch = true )
         {
             var pageReference = new PageReference();
             pageReference.PageId = CurrentPageReference.PageId;
@@ -754,6 +755,11 @@ namespace RockWeb.Blocks.Cms
                 cblModelFilter.Visible = false;
             }
 
+            foreach( var entity in indexableEntities )
+            {
+                LoadCustomFiltersForEntity( entity );
+            }
+
             hrSeparator.Visible = cblModelFilter.Visible;
 
             ddlSearchType.BindToEnum<SearchType>();
@@ -807,64 +813,54 @@ namespace RockWeb.Blocks.Cms
         }
 
         /// <summary>
-        /// Loads the custom filters.
+        /// Loads the custom filters for entity.
         /// </summary>
-        private void LoadCustomFilters()
+        /// <param name="entity">The entity.</param>
+        private void LoadCustomFiltersForEntity( EntityTypeCache entity )
         {
-            var enabledModelIds = new List<int>();
-            if ( GetAttributeValue( AttributeKey.EnabledModels ).IsNotNullOrWhiteSpace() )
+            var entityType = entity.GetEntityType();
+
+            if ( !SupportsIndexFieldFiltering( entityType ) )
             {
-                enabledModelIds = GetAttributeValue( AttributeKey.EnabledModels ).Split( ',' ).Select( int.Parse ).ToList();
+                return;
             }
 
-            var entities = EntityTypeCache.All();
-            var indexableEntities = entities.Where( i => i.IsIndexingEnabled == true ).ToList();
+            // This is a list of pre-selected models used to determin the initial enalbed state of the filter control
+            var queryStringModels = PageParameter( PageParameterKey.Models ).Split( ',' ).Select( s => s.Trim() ).ToList();
 
-            // if select entities are configured further filter by them
-            if ( enabledModelIds.Count > 0 )
+            var filterOptions = GetIndexFilterConfig( entityType );
+
+            RockCheckBoxList filterConfig = new RockCheckBoxList();
+            filterConfig.Label = filterOptions.FilterLabel;
+            filterConfig.CssClass = "js-entity-id-" + entity.Id.ToString();
+            filterConfig.RepeatDirection = RepeatDirection.Horizontal;
+            filterConfig.Attributes.Add( "entity-id", entity.Id.ToString() );
+            filterConfig.Attributes.Add( "entity-filter-field", filterOptions.FilterField );
+            filterConfig.Enabled = queryStringModels.Contains( entity.Id.ToString() );
+            filterConfig.DataSource = filterOptions.FilterValues.Where( i => i != null );
+            filterConfig.DataBind();
+
+            // set any selected values from the query string
+            if ( !string.IsNullOrWhiteSpace( PageParameter( filterOptions.FilterField ) ) )
             {
-                indexableEntities = indexableEntities.Where( i => enabledModelIds.Contains( i.Id ) ).ToList();
-            }
+                List<string> selectedValues = PageParameter( filterOptions.FilterField ).Split( ',' ).ToList();
 
-            foreach ( var entity in indexableEntities )
-            {
-                var entityType = entity.GetEntityType();
-
-                if ( SupportsIndexFieldFiltering( entityType ) )
+                foreach ( ListItem item in filterConfig.Items )
                 {
-                    var filterOptions = GetIndexFilterConfig( entityType );
-
-                    RockCheckBoxList filterConfig = new RockCheckBoxList();
-                    filterConfig.Label = filterOptions.FilterLabel;
-                    filterConfig.CssClass = "js-entity-id-" + entity.Id.ToString();
-                    filterConfig.RepeatDirection = RepeatDirection.Horizontal;
-                    filterConfig.Attributes.Add( "entity-id", entity.Id.ToString() );
-                    filterConfig.Attributes.Add( "entity-filter-field", filterOptions.FilterField );
-                    filterConfig.DataSource = filterOptions.FilterValues.Where( i => i != null );
-                    filterConfig.DataBind();
-
-                    // set any selected values from the query string
-                    if ( !string.IsNullOrWhiteSpace( PageParameter( filterOptions.FilterField ) ) )
+                    if ( selectedValues.Contains( item.Value ) )
                     {
-                        List<string> selectedValues = PageParameter( filterOptions.FilterField ).Split( ',' ).ToList();
-
-                        foreach ( ListItem item in filterConfig.Items )
-                        {
-                            if ( selectedValues.Contains( item.Value ) )
-                            {
-                                item.Selected = true;
-                            }
-                        }
-                    }
-
-                    if ( filterOptions.FilterValues.Count > 0 )
-                    {
-                        HtmlGenericContainer filterWrapper = new HtmlGenericContainer( "div", "col-md-6" );
-                        filterWrapper.Controls.Add( filterConfig );
-                        phFilters.Controls.Add( filterWrapper );
+                        item.Selected = true;
                     }
                 }
             }
+
+            if ( filterOptions.FilterValues.Count > 0 )
+            {
+                HtmlGenericContainer filterWrapper = new HtmlGenericContainer( "div", "col-md-6" );
+                filterWrapper.Controls.Add( filterConfig );
+                phFilters.Controls.Add( filterWrapper );
+            }
+            
         }
 
         /// <summary>
