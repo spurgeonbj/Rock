@@ -76,6 +76,7 @@
                             <li><a href="https://github.com/tonyheupel/liquid.js">Liquid.js</a> (MIT)</li>
                             <li><a href="http://bootboxjs.com/">Bootbox.js</a> (MIT)</li>
                             <li><a href="http://www.ddaysoftware.com">DDay.iCal</a> (BSD)</li>
+                            <li><a href="https://github.com/rianjs/ical.net">Ical.NET</a> (MIT)</li>
                             <li><a href="http://www.codeproject.com/Articles/11305/EXIFectractor-library-extract-EXIF-information">EXIFextractor</a> (Ms-RL)</li>
                             <li><a href="http://dotnetzip.codeplex.com">DotNetZip</a> (Ms-PL)</li>
                             <li><a href="http://nuget.org/packages/WebActivator">WebActivatorEx</a> (Ms-PL)</li>
