@@ -469,7 +469,7 @@ $(document).ready(function () {
                 // This block is unnecessary if the event has a name (because the name will take priority over the schedule, anyway), but it
                 // has been intentionally left in place to prevent anyone from creating an unintentional bug in the future, as it affects
                 // the logic below.
-                DDay.iCal.Event calendarEvent = occurrence.Schedule.GetCalendarEvent();
+                var calendarEvent = occurrence.Schedule.GetCalendarEventV2();
                 if ( calendarEvent == null )
                 {
                     hasSchedule = false;

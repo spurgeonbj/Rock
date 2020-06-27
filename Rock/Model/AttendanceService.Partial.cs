@@ -947,7 +947,7 @@ namespace Rock.Model
                         if ( schedule != null )
                         {
                             var scheduleStartDateTimeOverride = groupMember.ScheduleStartDate.Value.Add( occurrenceScheduledTime );
-                            var matches = schedule.GetOccurrences( beginDateTime, endDateTime, scheduleStartDateTimeOverride );
+                            var matches = schedule.GetOccurrencesV2( beginDateTime, endDateTime, scheduleStartDateTimeOverride );
                             if ( matches.Any() )
                             {
                                 matchingScheduleGroupMemberIdList.Add( groupMember.GroupMemberId );

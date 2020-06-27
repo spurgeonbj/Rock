@@ -200,7 +200,7 @@ namespace Rock.Model
             if ( !string.IsNullOrWhiteSpace( groupSchedule.iCalendarContent ) )
             {
                 // If schedule has an iCal schedule, get all the past occurrences 
-                foreach ( var occurrence in groupSchedule.GetOccurrences( startDate, endDate ) )
+                foreach ( var occurrence in groupSchedule.GetOccurrencesV2( startDate, endDate ) )
                 {
                     var newOccurrence = new AttendanceOccurrence
                     {
@@ -367,7 +367,7 @@ namespace Rock.Model
             if ( !string.IsNullOrWhiteSpace( groupSchedule.iCalendarContent ) )
             {
                 // If schedule has an iCal schedule, get all the past occurrences 
-                foreach ( var occurrence in groupSchedule.GetOccurrences( fromDate, toDate ) )
+                foreach ( var occurrence in groupSchedule.GetOccurrencesV2( fromDate, toDate ) )
                 {
                     var newOccurrence = new AttendanceOccurrence
                     {
