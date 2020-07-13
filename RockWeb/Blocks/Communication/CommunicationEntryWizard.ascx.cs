@@ -2589,6 +2589,52 @@ sendCountTerm.PluralizeIf( sendCount != 1 ) );
         }
 
         /// <summary>
+        /// Creates a new EntitySet containing the list of Recipient Person records and returns a queryable of the identifiers.
+        /// The result can be referenced as a subquery, thereby avoiding the need to pass a large list of keys in the query string
+        /// that may break the limits of the query parser.
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        private IQueryable<int> GetRecipientPersonIdPersistedList(List<int> personIdList, RockContext rockContext )
+        {
+            // create entity set with selected individuals
+            if ( personIdList.Any() )
+            {
+                var entitySet = new Rock.Model.EntitySet();
+                entitySet.Name = "RecipientPersonEntitySet_Communication";
+                entitySet.EntityTypeId = Rock.Web.Cache.EntityTypeCache.Get<Rock.Model.Person>().Id;
+                entitySet.ExpireDateTime = RockDateTime.Now.AddMinutes( 20 );
+
+                foreach ( var key in personIdList )
+                {
+                    try
+                    {
+                        var item = new Rock.Model.EntitySetItem();
+                        item.EntityId = ( int ) key;
+                        entitySet.Items.Add( item );
+                    }
+                    catch
+                    {
+                        // ignore
+                    }
+                }
+
+                if ( entitySet.Items.Any() )
+                {
+                    var service = new Rock.Model.EntitySetService( rockContext );
+                    service.Add( entitySet );
+
+                    rockContext.SaveChanges();
+
+                    var entitySetItemQuery = new EntitySetItemService( rockContext ).Queryable().Where( x => x.EntitySetId == entitySet.Id ).Select( x => x.Id );
+
+                    return entitySetItemQuery;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Updates the communication.
         /// </summary>
         /// <param name="rockContext">The rock context.</param>
@@ -2656,12 +2702,30 @@ sendCountTerm.PluralizeIf( sendCount != 1 ) );
 
             // Add any new recipients
             HashSet<int> communicationPersonIdHash = new HashSet<int>( qryRecipients.Select( a => a.PersonAlias.PersonId ) );
-            var recipientPersonsLookup = new PersonService( rockContext ).Queryable().Where( a => recipientPersonIds.Contains( a.Id ) ).Select( a => new
+
+            var recipientPersonIdQuery = GetRecipientPersonIdPersistedList( recipientPersonIds, rockContext );
+
+            if ( recipientPersonIdQuery == null )
             {
-                PersonId = a.Id,
-                a.CommunicationPreference,
-                PrimaryAlias = a.Aliases.Where( x => x.AliasPersonId == x.PersonId ).Select( pa => pa ).FirstOrDefault()
-            } ).ToDictionary( k => k.PersonId, v => new { v.CommunicationPreference, v.PrimaryAlias } );
+                return null;
+            }
+
+            var recipientPersonsLookup = new PersonService( rockContext ).Queryable().Where( a => recipientPersonIdQuery.Contains( a.Id ) )
+                .Select( a => new
+                {
+                    PersonId = a.Id,
+                    a.CommunicationPreference,
+                    PrimaryAlias = a.Aliases.Where( x => x.AliasPersonId == x.PersonId ).Select( pa => pa ).FirstOrDefault()
+                } )
+                .ToDictionary( k => k.PersonId, v => new { v.CommunicationPreference, v.PrimaryAlias } );
+
+
+            //var recipientPersonsLookup = new PersonService( rockContext ).Queryable().Where( a => recipientPersonIds.Contains( a.Id ) ).Select( a => new
+            //{
+            //    PersonId = a.Id,
+            //    a.CommunicationPreference,
+            //    PrimaryAlias = a.Aliases.Where( x => x.AliasPersonId == x.PersonId ).Select( pa => pa ).FirstOrDefault()
+            //} ).ToDictionary( k => k.PersonId, v => new { v.CommunicationPreference, v.PrimaryAlias } );
 
             foreach ( var recipientPersonLookup in recipientPersonsLookup )
             {
