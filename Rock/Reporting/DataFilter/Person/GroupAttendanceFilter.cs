@@ -115,10 +115,11 @@ namespace Rock.Reporting.DataFilter.Person
         /// <returns></returns>
         public override string FormatSelection( Type entityType, string selection )
         {
-            var s = "Attendance";
+            var selectionOutput = "Attendance";
             var groupAttendanceFilterSelection = GetGroupAttendanceFilterSelection( selection );
 
             var groupsList = "";
+            var selectedSchedules = "";
             using ( var rockContext = new RockContext() )
             {
                 groupsList = new GroupService( rockContext )
@@ -126,22 +127,43 @@ namespace Rock.Reporting.DataFilter.Person
                     .Select( a => a.Name )
                     .ToList()
                     .AsDelimited( ", ", " or " );
+
+
+                selectedSchedules = new ScheduleService( rockContext )
+                    .GetByIds( groupAttendanceFilterSelection.Schedules )
+                    .Select(x => x.Name)
+                    .ToList()
+                    .AsDelimited( ", ", " or " );
             }
 
+            if ( groupsList.IsNullOrWhiteSpace() )
+            {
+                groupsList = "?";
+            } else if ( groupAttendanceFilterSelection.IncludeChildGroups )
+            {
+                groupsList += " (or child groups)";
+            }
+
+            if ( selectedSchedules.IsNotNullOrWhiteSpace() )
+            {
+                selectedSchedules = $"on {selectedSchedules} ";
+            }
 
             var comparisonType = groupAttendanceFilterSelection.IntegerCompare.ConvertToEnum<ComparisonType>( ComparisonType.GreaterThanOrEqualTo );
 
             string dateRangeText = SlidingDateRangePicker.FormatDelimitedValues( groupAttendanceFilterSelection.SlidingDateRange );
 
-            s = string.Format(
-                    "Attended '{0}'{4} {1} {2} times. Date Range: {3}",
-                    groupsList != null ? groupsList : "?",
-                    comparisonType.ConvertToString(),
-                    groupAttendanceFilterSelection.AttendedCount,
-                    dateRangeText,
-                    groupAttendanceFilterSelection.IncludeChildGroups ? " (or child groups) " : string.Empty );
+            selectionOutput = $"Attended '{groupsList}' {selectedSchedules}{comparisonType.ConvertToString()} {groupAttendanceFilterSelection.AttendedCount} times. Date Range: {dateRangeText}";
 
-            return s;
+            //selectionOutput = string.Format(
+            //        "Attended '{0}'{4} {1} {2} times. Date Range: {3}",
+            //        groupsList != null ? groupsList : "?",
+            //        comparisonType.ConvertToString(),
+            //        groupAttendanceFilterSelection.AttendedCount,
+            //        dateRangeText,
+            //        groupAttendanceFilterSelection.IncludeChildGroups ? " (or child groups) " : string.Empty );
+
+            return selectionOutput;
         }
 
         /// <summary>
@@ -303,7 +325,8 @@ namespace Rock.Reporting.DataFilter.Person
                 AttendedCount = tbAttendedCount.Text.AsInteger(),
                 SlidingDateRange = slidingDateRangePicker.DelimitedValues,
                 IncludeChildGroups = cbChildGroups.Checked,
-                Schedules = schedulePicker.SelectedValues.AsIntegerList(),
+                // We have to eliminate zero, because the schedulePicker control adds a zero if no values are selected.
+                Schedules = schedulePicker.SelectedValues.AsIntegerList().Where(x => x != 0).ToList(),
             };
 
             return JsonConvert.SerializeObject( groupAttendanceFilterSelection );
