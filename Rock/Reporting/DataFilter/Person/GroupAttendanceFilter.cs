@@ -128,7 +128,6 @@ namespace Rock.Reporting.DataFilter.Person
                     .ToList()
                     .AsDelimited( ", ", " or " );
 
-
                 selectedSchedules = new ScheduleService( rockContext )
                     .GetByIds( groupAttendanceFilterSelection.Schedules )
                     .Select(x => x.Name)
@@ -154,14 +153,6 @@ namespace Rock.Reporting.DataFilter.Person
             string dateRangeText = SlidingDateRangePicker.FormatDelimitedValues( groupAttendanceFilterSelection.SlidingDateRange );
 
             selectionOutput = $"Attended '{groupsList}' {selectedSchedules}{comparisonType.ConvertToString()} {groupAttendanceFilterSelection.AttendedCount} times. Date Range: {dateRangeText}";
-
-            //selectionOutput = string.Format(
-            //        "Attended '{0}'{4} {1} {2} times. Date Range: {3}",
-            //        groupsList != null ? groupsList : "?",
-            //        comparisonType.ConvertToString(),
-            //        groupAttendanceFilterSelection.AttendedCount,
-            //        dateRangeText,
-            //        groupAttendanceFilterSelection.IncludeChildGroups ? " (or child groups) " : string.Empty );
 
             return selectionOutput;
         }
@@ -363,8 +354,6 @@ namespace Rock.Reporting.DataFilter.Person
             slidingDateRangePicker.DelimitedValues = groupAttendanceFilterSelection.SlidingDateRange;
             cbChildGroups.Checked = groupAttendanceFilterSelection.IncludeChildGroups;
         }
-
-
 
         private GroupAttendanceFilterSelection GetGroupAttendanceFilterSelection( string selection )
         {
