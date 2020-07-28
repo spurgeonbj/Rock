@@ -357,12 +357,14 @@ namespace Rock.Reporting.DataFilter.Person
 
         private GroupAttendanceFilterSelection GetGroupAttendanceFilterSelection( string selection )
         {
-            var groupAttendanceFilterSelection = new GroupAttendanceFilterSelection();
+            var groupAttendanceFilterSelection = selection.FromJsonOrNull<GroupAttendanceFilterSelection>();
 
             if ( groupAttendanceFilterSelection != null )
             {
-                return selection.FromJsonOrNull<GroupAttendanceFilterSelection>();
+                return groupAttendanceFilterSelection;
             }
+
+            groupAttendanceFilterSelection = new GroupAttendanceFilterSelection();
 
             string[] options = selection.Split( '|' );
             if ( options.Length >= 4 )
