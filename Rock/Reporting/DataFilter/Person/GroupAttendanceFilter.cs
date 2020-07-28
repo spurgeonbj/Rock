@@ -214,7 +214,7 @@ namespace Rock.Reporting.DataFilter.Person
             SetSelection(
                 entityType,
                 controls,
-                JsonConvert.SerializeObject( defaultGroupAttendanceFilterSelection ) );
+                defaultGroupAttendanceFilterSelection.ToJson() );
 
             return controls;
         }
@@ -320,7 +320,7 @@ namespace Rock.Reporting.DataFilter.Person
                 Schedules = schedulePicker.SelectedValues.AsIntegerList().Where(x => x != 0).ToList(),
             };
 
-            return JsonConvert.SerializeObject( groupAttendanceFilterSelection );
+            return groupAttendanceFilterSelection.ToJson();
         }
 
         /// <summary>
@@ -357,12 +357,12 @@ namespace Rock.Reporting.DataFilter.Person
 
         private GroupAttendanceFilterSelection GetGroupAttendanceFilterSelection( string selection )
         {
-            if ( selection.Trim().StartsWith( "{" ) )
-            {
-                return Newtonsoft.Json.JsonConvert.DeserializeObject<GroupAttendanceFilterSelection>( selection );
-            }
-
             var groupAttendanceFilterSelection = new GroupAttendanceFilterSelection();
+
+            if ( groupAttendanceFilterSelection != null )
+            {
+                return selection.FromJsonOrNull<GroupAttendanceFilterSelection>();
+            }
 
             string[] options = selection.Split( '|' );
             if ( options.Length >= 4 )
