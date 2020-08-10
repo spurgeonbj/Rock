@@ -85,6 +85,7 @@ namespace Rock.Model
         /// </value>
         [DataMember( IsRequired = true )]
         [Required]
+        [Index( IsUnique = true )]
         public string ClientId { get; set; }
 
         /// <summary>
