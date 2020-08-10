@@ -13,13 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // </copyright>
-//
+
 using System.Linq;
+using System.Security.Claims;
 using System.Security.Principal;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
 using System.Web.Http.Controllers;
 using System.Web.Http.Filters;
+using AspNet.Security.OpenIdConnect.Primitives;
+using Rock.Data;
 using Rock.Model;
 using Rock.Rest.Jwt;
 
@@ -48,6 +51,45 @@ namespace Rock.Rest.Filters
                 actionContext.Request.SetUserPrincipal( principal );
                 return;
                 //}
+            }
+
+            // If check if ASOS authentication occurred.
+            principal = actionContext.RequestContext.Principal;
+            if ( principal != null && principal.Identity != null )
+            {
+                var claimIdentity = principal.Identity as ClaimsIdentity;
+                if ( claimIdentity != null )
+                {
+                    var clientId = claimIdentity.Claims.FirstOrDefault( c => c.Type == OpenIdConnectConstants.Claims.ClientId )?.Value;
+                    if ( clientId.IsNotNullOrWhiteSpace() )
+                    {
+                        using ( var rockContext = new RockContext() )
+                        {
+                            var authClientService = new AuthClientService( rockContext );
+                            var authClient = authClientService.GetByClientId( clientId );
+                            if ( authClient.AllowUserApiAccess )
+                            {
+                                var userName = claimIdentity.Claims.FirstOrDefault( c => c.Type == OpenIdConnectConstants.Claims.Username )?.Value;
+
+                                if ( userName.IsNotNullOrWhiteSpace() && clientId.IsNotNullOrWhiteSpace() )
+                                {
+                                    UserLogin userLogin = null;
+
+                                    var userLoginService = new UserLoginService( rockContext );
+                                    userLogin = userLoginService.GetByUserName( userName );
+
+                                    if ( userLogin != null )
+                                    {
+                                        var identity = new GenericIdentity( userLogin.UserName );
+                                        principal = new GenericPrincipal( identity, null );
+                                        actionContext.Request.SetUserPrincipal( principal );
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             // If not, see if there's a valid token
