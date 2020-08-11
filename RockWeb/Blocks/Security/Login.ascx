@@ -32,6 +32,7 @@
 
                         <asp:Panel ID="pnlMessage" runat="server" Visible="false" CssClass="alert alert-warning block-message margin-t-md" />
 
+                        <asp:Button ID="btnOpenIdLogin" runat="server" Text="OIDC Login" CssClass="btn btn-primary" OnClick="btnOpenIdLogin_Click" />
                     </asp:Panel>
                 </div>
             </fieldset>

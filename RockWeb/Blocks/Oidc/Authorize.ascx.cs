@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Linq.Dynamic;
+using System.Net;
 using System.Threading.Tasks;
 using System.Web;
 using AspNet.Security.OpenIdConnect.Primitives;
@@ -203,6 +204,7 @@ namespace RockWeb.Blocks.Oidc
             // the user agent to the client application using the appropriate response_mode.
             var owinContext = Context.GetOwinContext();
             owinContext.Authentication.Challenge( OpenIdConnectServerDefaults.AuthenticationType );
+            Response.StatusCode = HttpStatusCode.Forbidden.ConvertToInt();
         }
 
         /// <summary>
