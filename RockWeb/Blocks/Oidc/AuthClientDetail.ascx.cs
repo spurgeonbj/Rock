@@ -27,6 +27,7 @@ using Rock.Constants;
 using Rock.Data;
 using Rock.Model;
 using Rock.Security;
+using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
 
@@ -124,6 +125,18 @@ namespace RockWeb.Blocks.Oidc
 
             authClient.Name = tbName.Text;
             authClient.IsActive = cbActive.Checked;
+            authClient.ClientId = tbClientId.Text;
+            
+            authClient.RedirectUri = tbRedirectUri.Text;
+            authClient.PostLogoutRedirectUri = tbPostLogoutRedirectUri.Text;
+
+            if ( tbClientSecret.Text.IsNotNullOrWhiteSpace() )
+            {
+                var entityTypeName = EntityTypeCache.Get<Rock.Security.Authentication.Database>().Name;
+                var databaseAuth = AuthenticationContainer.GetComponent( entityTypeName ) as Rock.Security.Authentication.Database;
+                var encryptedClientSecret = databaseAuth.EncryptString( tbClientSecret.Text );
+                authClient.ClientSecretHash = encryptedClientSecret;
+            }
 
             var activeClaims = GetActiveClaims( rockContext ).Select( ac => ac.ScopeName ).Distinct();
             var selectedClaims = new List<string>( activeClaims.Count() );
@@ -204,7 +217,6 @@ namespace RockWeb.Blocks.Oidc
             tbName.Text = authClient.Name;
             cbActive.Checked = authClient.IsActive;
             tbClientId.Text = authClient.ClientId;
-            tbClientSecret.Text = authClient.ClientSecretHash;
             tbRedirectUri.Text = authClient.RedirectUri;
             tbPostLogoutRedirectUri.Text = authClient.PostLogoutRedirectUri;
 

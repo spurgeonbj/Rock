@@ -27,7 +27,7 @@
                             <Rock:RockTextBox ID="tbClientId" Label="Client Id" runat="server" CssClass="form-group" />
                         </div>
                         <div class="col-md-6">
-                            <Rock:RockTextBox ID="tbClientSecret" Label="Client Secret" runat="server" CssClass="form-group" />
+                            <Rock:RockTextBox TextMode="Password" ID="tbClientSecret" Label="Client Secret" runat="server" CssClass="form-group" />
                         </div>
                     </div>
                     <div class="row">
@@ -35,7 +35,7 @@
                             <Rock:RockTextBox ID="tbRedirectUri" Label="Redirect Uri" runat="server" CssClass="form-group" />
                         </div>
                         <div class="col-md-6">
-                            <Rock:RockTextBox ID="tbPostLogoutRedirectUri" Label="Redirect Uri" runat="server" CssClass="form-group" />
+                            <Rock:RockTextBox ID="tbPostLogoutRedirectUri" Label="Logout Redirect Uri" runat="server" CssClass="form-group" />
                         </div>
                     </div>
                     <div class="row">

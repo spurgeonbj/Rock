@@ -333,6 +333,16 @@ namespace Rock.Security.Authentication
             return false;
         }
 
+        /// <summary>
+        /// Encrypts the string.
+        /// </summary>
+        /// <param name="valueToEncrypt">The value to encrypt.</param>
+        /// <returns></returns>
+        public string EncryptString(string valueToEncrypt )
+        {
+            return EncodeBcrypt( valueToEncrypt );
+        }
+
         private string EncodeBcrypt( string password )
         {
             var workFactor = ( GetAttributeValue( "BCryptCostFactor" ).AsIntegerOrNull() ?? 11 );
