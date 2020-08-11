@@ -30,16 +30,16 @@ using Rock.Security;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
 
-namespace RockWeb.Blocks.Oidc
+namespace RockWeb.Blocks.Security.Oidc
 {
     /// <summary>
     /// Block for displaying logins.  By default displays all logins, but can be configured to use person context to display logins for a specific person.
     /// </summary>
-    [DisplayName( "Open Id Connect Scopes" )]
-    [Category( "Oidc" )]
-    [Description( "Block for displaying and editing available Opend Id Connect scopes." )]
+    [DisplayName( "Open Id Connect Clients" )]
+    [Category( "Security > OIDC" )]
+    [Description( "Block for displaying and editing available Opend Id Connect clients." )]
     [LinkedPage( "Detail Page", Key = AttributeKey.DetailPage )]
-    public partial class AuthScopeList : RockBlock, ICustomGridColumns
+    public partial class AuthClientList : RockBlock, ICustomGridColumns
     {
         public class AttributeKey
         {
@@ -48,8 +48,9 @@ namespace RockWeb.Blocks.Oidc
 
         public class PageParameterKey
         {
-            public const string ScopeDetailId = "scopeId";
+            public const string AuthClientId = "AuthClientId";
         }
+
         #region Base Control Methods
 
         /// <summary>
@@ -64,13 +65,13 @@ namespace RockWeb.Blocks.Oidc
 
             gfSettings.ApplyFilterClick += gfSettings_ApplyFilterClick;
 
-            gAuthScopes.DataKeyNames = new string[] { "Id" };
-            gAuthScopes.Actions.AddClick += gAuthScopes_AddClick;
-            gAuthScopes.GridRebind += gAuthScopes_GridRebind;
+            gAuthClients.DataKeyNames = new string[] { "Id" };
+            gAuthClients.Actions.AddClick += gAuthClients_AddClick;
+            gAuthClients.GridRebind += gAuthClients_GridRebind;
 
             bool canEdit = IsUserAuthorized( Authorization.EDIT );
-            gAuthScopes.IsDeleteEnabled = canEdit;
-            gAuthScopes.Actions.ShowAdd = canEdit;
+            gAuthClients.IsDeleteEnabled = canEdit;
+            gAuthClients.Actions.ShowAdd = canEdit;
 
             base.OnInit( e );
         }
@@ -97,15 +98,15 @@ namespace RockWeb.Blocks.Oidc
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        private void gAuthScopes_AddClick( object sender, EventArgs e )
+        private void gAuthClients_AddClick( object sender, EventArgs e )
         {
             NavigateToAuthScopeDetailPage( 0 );
         }
 
-        private void NavigateToAuthScopeDetailPage( int authScopeId )
+        private void NavigateToAuthScopeDetailPage( int authClaimId )
         {
             var parms = new Dictionary<string, string>();
-            parms.Add( PageParameterKey.ScopeDetailId, authScopeId.ToString() );
+            parms.Add( PageParameterKey.AuthClientId, authClaimId.ToString() );
             NavigateToLinkedPage( AttributeKey.DetailPage, parms );
         }
 
@@ -117,7 +118,6 @@ namespace RockWeb.Blocks.Oidc
         protected void gfSettings_ApplyFilterClick( object sender, EventArgs e )
         {
             gfSettings.SaveUserPreference( "Name", tbName.Text );
-            gfSettings.SaveUserPreference( "Public Name", tbPublicName.Text );
 
             if ( ddlActiveFilter.SelectedValue == "all" )
             {
@@ -136,7 +136,7 @@ namespace RockWeb.Blocks.Oidc
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="RowEventArgs" /> instance containing the event data.</param>
-        protected void gAuthScopes_Delete( object sender, RowEventArgs e )
+        protected void gAuthClients_Delete( object sender, RowEventArgs e )
         {
             bool canEdit = IsUserAuthorized( Authorization.EDIT );
 
@@ -144,11 +144,11 @@ namespace RockWeb.Blocks.Oidc
             {
                 using ( var rockContext = new RockContext() )
                 {
-                    var authScopeService = new AuthScopeService( rockContext );
-                    var authScope = authScopeService.Get( e.RowKeyId );
+                    var authClientService = new AuthClientService( rockContext );
+                    var authScope = authClientService.Get( e.RowKeyId );
                     if ( authScope != null )
                     {
-                        authScopeService.Delete( authScope );
+                        authClientService.Delete( authScope );
                         rockContext.SaveChanges();
                     }
                 }
@@ -162,7 +162,7 @@ namespace RockWeb.Blocks.Oidc
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>
-        private void gAuthScopes_GridRebind( object sender, EventArgs e )
+        private void gAuthClients_GridRebind( object sender, EventArgs e )
         {
             BindGrid();
         }
@@ -176,28 +176,28 @@ namespace RockWeb.Blocks.Oidc
         {
         }
 
-        protected void gAuthScopes_RowDataBound( object sender, GridViewRowEventArgs e )
+        protected void gAuthClients_RowDataBound( object sender, GridViewRowEventArgs e )
         {
-            var authScope = e.Row.DataItem as AuthScope;
-            if ( authScope == null )
+            var authClaim = e.Row.DataItem as AuthClaim;
+            if ( authClaim == null )
             {
                 return;
             }
 
-            var deleteFieldColumn = gAuthScopes.ColumnsOfType<DeleteField>().FirstOrDefault();
+            var deleteFieldColumn = gAuthClients.ColumnsOfType<DeleteField>().FirstOrDefault();
             if ( deleteFieldColumn == null || !deleteFieldColumn.Visible )
             {
                 return;
             }
 
-            var deleteFieldColumnIndex = gAuthScopes.GetColumnIndex( deleteFieldColumn );
+            var deleteFieldColumnIndex = gAuthClients.GetColumnIndex( deleteFieldColumn );
             var deleteButton = e.Row.Cells[deleteFieldColumnIndex].ControlsOfTypeRecursive<LinkButton>().FirstOrDefault();
             if ( deleteButton == null )
             {
                 return;
             }
 
-            deleteButton.Visible = !authScope.IsSystem;
+            deleteButton.Visible = !authClaim.IsSystem;
         }
         #endregion
 
@@ -209,7 +209,6 @@ namespace RockWeb.Blocks.Oidc
         private void BindFilter()
         {
             tbName.Text = gfSettings.GetUserPreference( "Name" );
-            tbPublicName.Text = gfSettings.GetUserPreference( "PublicName" );
 
             // Set the Active Status
             var itemActiveStatus = ddlActiveFilter.Items.FindByValue( gfSettings.GetUserPreference( "Active Status" ) );
@@ -225,17 +224,12 @@ namespace RockWeb.Blocks.Oidc
         private void BindGrid()
         {
             var rockContext = new RockContext();
-            var authScopeService = new AuthScopeService( rockContext );
-            var authScopeQuery = authScopeService.Queryable().AsNoTracking();
+            var authClientService = new AuthClientService( rockContext );
+            var authClientQuery = authClientService.Queryable().AsNoTracking();
 
             if ( tbName.Text.IsNotNullOrWhiteSpace() )
             {
-                authScopeQuery = authScopeQuery.Where( s => s.Name.Contains( tbName.Text ) );
-            }
-
-            if ( tbPublicName.Text.IsNotNullOrWhiteSpace() )
-            {
-                authScopeQuery = authScopeQuery.Where( s => s.PublicName.Contains( tbPublicName.Text ) );
+                authClientQuery = authClientQuery.Where( s => s.Name.Contains( tbName.Text ) );
             }
 
             if ( ddlActiveFilter.SelectedIndex > -1 )
@@ -243,29 +237,29 @@ namespace RockWeb.Blocks.Oidc
                 switch ( ddlActiveFilter.SelectedValue )
                 {
                     case "active":
-                        authScopeQuery = authScopeQuery.Where( s => s.IsActive );
+                        authClientQuery = authClientQuery.Where( s => s.IsActive );
                         break;
                     case "inactive":
-                        authScopeQuery = authScopeQuery.Where( s => !s.IsActive );
+                        authClientQuery = authClientQuery.Where( s => !s.IsActive );
                         break;
                 }
             }
 
             // Sort
-            var sortProperty = gAuthScopes.SortProperty;
+            var sortProperty = gAuthClients.SortProperty;
             if ( sortProperty == null )
             {
                 sortProperty = new SortProperty( new GridViewSortEventArgs( "Name", SortDirection.Ascending ) );
             }
-            authScopeQuery = authScopeQuery.Sort( sortProperty );
+            authClientQuery = authClientQuery.Sort( sortProperty );
 
-            gAuthScopes.SetLinqDataSource( authScopeQuery );
-            gAuthScopes.DataBind();
+            gAuthClients.SetLinqDataSource( authClientQuery );
+            gAuthClients.DataBind();
         }
 
         #endregion
 
-        protected void gAuthScopes_RowSelected( object sender, RowEventArgs e )
+        protected void gAuthClients_RowSelected( object sender, RowEventArgs e )
         {
             NavigateToAuthScopeDetailPage( e.RowKeyId );
         }

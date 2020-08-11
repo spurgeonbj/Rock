@@ -29,13 +29,13 @@ using Rock.Security;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
 
-namespace RockWeb.Blocks.Oidc
+namespace RockWeb.Blocks.Security.Oidc
 {
     /// <summary>
     /// Block for displaying logins.  By default displays all logins, but can be configured to use person context to display logins for a specific person.
     /// </summary>
     [DisplayName( "Open Id Connect Claims" )]
-    [Category( "Oidc" )]
+    [Category( "Security > OIDC" )]
     [Description( "Block for displaying and editing available Opend Id Connect claims." )]
     public partial class AuthClaims : RockBlock, ICustomGridColumns, IDetailBlock
     {

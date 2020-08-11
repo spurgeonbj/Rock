@@ -31,10 +31,10 @@ using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
 
-namespace RockWeb.Blocks.Oidc
+namespace RockWeb.Blocks.Security.Oidc
 {
     [DisplayName( "Open Id Connect Client Detail" )]
-    [Category( "Oidc" )]
+    [Category( "Security > OIDC" )]
     [Description( "Displays the details of the given Open Id Connect Client." )]
     public partial class AuthClientDetail : Rock.Web.UI.RockBlock, IDetailBlock
     {

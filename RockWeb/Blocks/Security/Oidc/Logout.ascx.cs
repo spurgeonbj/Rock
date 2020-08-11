@@ -23,13 +23,13 @@ using Rock.Model;
 using Rock.Security;
 using Rock.Web.UI;
 
-namespace RockWeb.Blocks.Oidc
+namespace RockWeb.Blocks.Security.Oidc
 {
     /// <summary>
     /// Prompts user for login credentials.
     /// </summary>
     [DisplayName( "Logout" )]
-    [Category( "Oidc" )]
+    [Category( "Security > OIDC" )]
     [Description( "Logout the user from their auth client." )]
 
     public partial class Logout : RockBlock

@@ -1,4 +1,4 @@
-﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="Logout.ascx.cs" Inherits="RockWeb.Blocks.Oidc.Logout" %>
+﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="Logout.ascx.cs" Inherits="RockWeb.Blocks.Security.Oidc.Logout" %>
 
 <asp:UpdatePanel ID="upnlContent" runat="server">
     <ContentTemplate>
