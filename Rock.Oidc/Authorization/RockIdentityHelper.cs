@@ -28,7 +28,10 @@ using Rock.Web.Cache;
 
 namespace Rock.Oidc.Authorization
 {
-    internal static class RockIdentityHelper
+    /// <summary>
+    /// A class with helper functions to get client allowed scopes, claims and claim identity.
+    /// </summary>
+    public static class RockIdentityHelper
     {
         /// <summary>
         /// Returns a ClaimsIdentity that is populated with the allowed claims.
