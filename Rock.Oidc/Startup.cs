@@ -42,7 +42,7 @@ namespace Rock.Oidc
 
                 options.Issuer = new Uri( GlobalAttributesCache.Get().GetValue( "PublicApplicationRoot" ).EnsureTrailingForwardslash() );
 
-                // TODO: Should be settings.
+                // TODO: Perhaps configurable in in v2?
                 options.AuthorizationEndpointPath = new PathString( Paths.AuthorizePath );
                 options.LogoutEndpointPath = new PathString( Paths.LogoutPath );
                 options.TokenEndpointPath = new PathString( Paths.TokenPath );
