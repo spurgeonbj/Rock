@@ -48,6 +48,10 @@ namespace Rock.Oidc
                 options.TokenEndpointPath = new PathString( Paths.TokenPath );
                 options.UserinfoEndpointPath = new PathString( Paths.UserInfo );
 
+                options.AccessTokenLifetime = TimeSpan.FromSeconds( rockOidcSettings.AccessTokenLifetime );
+                options.IdentityTokenLifetime = TimeSpan.FromSeconds( rockOidcSettings.IdentityTokenLifetime );
+                options.RefreshTokenLifetime = TimeSpan.FromSeconds( rockOidcSettings.RefreshTokenLifetime );
+
                 options.ApplicationCanDisplayErrors = System.Web.Hosting.HostingEnvironment.IsDevelopmentEnvironment;
                 options.AllowInsecureHttp = System.Web.Hosting.HostingEnvironment.IsDevelopmentEnvironment;
 
