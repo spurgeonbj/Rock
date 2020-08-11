@@ -28,8 +28,15 @@ using Rock.Web.Cache;
 
 namespace Rock.Oidc.Authorization
 {
-    public static class RockIdentityHelper
+    internal static class RockIdentityHelper
     {
+        /// <summary>
+        /// Returns a ClaimsIdentity that is populated with the allowed claims.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <param name="allowedClaims">The allowed claims.</param>
+        /// <param name="clientId">The client identifier.</param>
+        /// <returns></returns>
         public static ClaimsIdentity GetRockClaimsIdentity( UserLogin user, IDictionary<string, string> allowedClaims, string clientId )
         {
             var identity = new ClaimsIdentity(
@@ -135,6 +142,15 @@ namespace Rock.Oidc.Authorization
             return identity;
         }
 
+        /// <summary>
+        /// Narrows the requested scopes to approved scopes.
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        /// <param name="clientId">The client identifier.</param>
+        /// <param name="requestedScopes">The requested scopes.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException">
+        /// </exception>
         public static IEnumerable<string> NarrowRequestedScopesToApprovedScopes( RockContext rockContext, string clientId, IEnumerable<string> requestedScopes )
         {
             if ( rockContext == null )
@@ -156,6 +172,14 @@ namespace Rock.Oidc.Authorization
             return requestedScopes.Intersect( allowedScopes );
         }
 
+        /// <summary>
+        /// Gets the allowed client scopes.
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        /// <param name="clientId">The client identifier.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException">
+        /// </exception>
         public static IEnumerable<string> GetAllowedClientScopes( RockContext rockContext, string clientId )
         {
             if ( rockContext == null )
@@ -196,6 +220,15 @@ namespace Rock.Oidc.Authorization
             return parsedClientScopes.Intersect( activeClientScopes );
         }
 
+        /// <summary>
+        /// Gets the allowed client claims.
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        /// <param name="clientId">The client identifier.</param>
+        /// <param name="allowedClientScopes">The allowed client scopes.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException">
+        /// </exception>
         public static IDictionary<string, string> GetAllowedClientClaims( RockContext rockContext, string clientId, IEnumerable<string> allowedClientScopes )
         {
             if ( rockContext == null )
