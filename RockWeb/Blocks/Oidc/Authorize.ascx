@@ -24,8 +24,8 @@
                 </ul>
 
                 <div class="actions">
-                    <a href="<%= Request.RawUrl %>&action=approve&token=<%= HttpUtility.UrlEncode(_antiXsrfTokenValue) %>" class="btn btn-success">Yes</a>
-                    <a href="<%= Request.RawUrl %>&action=deny&token=<%= HttpUtility.UrlEncode(_antiXsrfTokenValue) %>" class="btn btn-success">No</a>
+                    <a href="<%= Request.RawUrl %>&action=approve&token=<%= HttpUtility.UrlEncode(_antiXsrfTokenValue) %>" class="btn btn-primary">Yes</a>
+                    <a href="<%= Request.RawUrl %>&action=deny&token=<%= HttpUtility.UrlEncode(_antiXsrfTokenValue) %>" class="btn btn-default">No</a>
                 </div>
             </div>
         </asp:Panel>
