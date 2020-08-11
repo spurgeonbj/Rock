@@ -183,7 +183,7 @@ namespace Rock.Migrations
         {
 
             // Add Page Give Permission to Site:External Website
-            RockMigrationHelper.AddPage( true, Rock.SystemGuid.Page.SUPPORT_PAGES_EXTERNAL_SITE, Rock.SystemGuid.Layout.FULL_WIDTH, "Give Permission", "", Rock.SystemGuid.Page.OIDC_GIVE_PERMISSION, "" );
+            RockMigrationHelper.AddPage( true, Rock.SystemGuid.Page.SECURITY_ADMIN_TOOLS, Rock.SystemGuid.Layout.FULL_WIDTH, "Give Permission", "", Rock.SystemGuid.Page.OIDC_GIVE_PERMISSION, "" );
 
             // Add Page Logout to Site:External Website
             RockMigrationHelper.AddPage( true, Rock.SystemGuid.Page.SUPPORT_PAGES_EXTERNAL_SITE, "55E19934-762D-48E5-BD07-ACB1249ACBDC", "Logout", "", Rock.SystemGuid.Page.OIDC_LOGOUT, "" );
