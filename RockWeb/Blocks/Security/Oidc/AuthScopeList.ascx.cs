@@ -35,21 +35,28 @@ namespace RockWeb.Blocks.Security.Oidc
     /// <summary>
     /// Block for displaying logins.  By default displays all logins, but can be configured to use person context to display logins for a specific person.
     /// </summary>
-    [DisplayName( "Open Id Connect Scopes" )]
+    [DisplayName( "OpenID Connect Scopes" )]
     [Category( "Security > OIDC" )]
-    [Description( "Block for displaying and editing available Opend Id Connect scopes." )]
+    [Description( "Block for displaying and editing available OpenID Connect scopes." )]
     [LinkedPage( "Detail Page", Key = AttributeKey.DetailPage )]
     public partial class AuthScopeList : RockBlock, ICustomGridColumns
     {
         public class AttributeKey
         {
+            /// <summary>
+            /// The detail page
+            /// </summary>
             public const string DetailPage = "DetailPage";
         }
 
         public class PageParameterKey
         {
+            /// <summary>
+            /// The scope detail identifier
+            /// </summary>
             public const string ScopeDetailId = "scopeId";
         }
+
         #region Base Control Methods
 
         /// <summary>
@@ -100,13 +107,6 @@ namespace RockWeb.Blocks.Security.Oidc
         private void gAuthScopes_AddClick( object sender, EventArgs e )
         {
             NavigateToAuthScopeDetailPage( 0 );
-        }
-
-        private void NavigateToAuthScopeDetailPage( int authScopeId )
-        {
-            var parms = new Dictionary<string, string>();
-            parms.Add( PageParameterKey.ScopeDetailId, authScopeId.ToString() );
-            NavigateToLinkedPage( AttributeKey.DetailPage, parms );
         }
 
         /// <summary>
@@ -176,6 +176,11 @@ namespace RockWeb.Blocks.Security.Oidc
         {
         }
 
+        /// <summary>
+        /// Handles the RowDataBound event of the gAuthScopes control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="GridViewRowEventArgs"/> instance containing the event data.</param>
         protected void gAuthScopes_RowDataBound( object sender, GridViewRowEventArgs e )
         {
             var authScope = e.Row.DataItem as AuthScope;
@@ -198,6 +203,16 @@ namespace RockWeb.Blocks.Security.Oidc
             }
 
             deleteButton.Visible = !authScope.IsSystem;
+        }
+
+        /// <summary>
+        /// Handles the RowSelected event of the gAuthScopes control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RowEventArgs"/> instance containing the event data.</param>
+        protected void gAuthScopes_RowSelected( object sender, RowEventArgs e )
+        {
+            NavigateToAuthScopeDetailPage( e.RowKeyId );
         }
         #endregion
 
@@ -263,11 +278,18 @@ namespace RockWeb.Blocks.Security.Oidc
             gAuthScopes.DataBind();
         }
 
+        /// <summary>
+        /// Navigates to authentication scope detail page.
+        /// </summary>
+        /// <param name="authScopeId">The authentication scope identifier.</param>
+        private void NavigateToAuthScopeDetailPage( int authScopeId )
+        {
+            var parms = new Dictionary<string, string>();
+            parms.Add( PageParameterKey.ScopeDetailId, authScopeId.ToString() );
+            NavigateToLinkedPage( AttributeKey.DetailPage, parms );
+        }
         #endregion
 
-        protected void gAuthScopes_RowSelected( object sender, RowEventArgs e )
-        {
-            NavigateToAuthScopeDetailPage( e.RowKeyId );
-        }
+        
     }
 }

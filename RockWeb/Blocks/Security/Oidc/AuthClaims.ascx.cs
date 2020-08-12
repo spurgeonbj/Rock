@@ -34,16 +34,25 @@ namespace RockWeb.Blocks.Security.Oidc
     /// <summary>
     /// Block for displaying logins.  By default displays all logins, but can be configured to use person context to display logins for a specific person.
     /// </summary>
-    [DisplayName( "Open Id Connect Claims" )]
+    [DisplayName( "OpenID Connect Claims" )]
     [Category( "Security > OIDC" )]
-    [Description( "Block for displaying and editing available Opend Id Connect claims." )]
+    [Description( "Block for displaying and editing available OpenID Connect claims." )]
     public partial class AuthClaims : RockBlock, ICustomGridColumns, IDetailBlock
     {
         public class PageParameterKey
         {
+            /// <summary>
+            /// The scope detail identifier
+            /// </summary>
             public const string ScopeDetailId = "scopeId";
         }
 
+        /// <summary>
+        /// Gets the authentication scope identifier.
+        /// </summary>
+        /// <value>
+        /// The authentication scope identifier.
+        /// </value>
         private int? AuthScopeId
         {
             get
@@ -188,6 +197,11 @@ namespace RockWeb.Blocks.Security.Oidc
         {
         }
 
+        /// <summary>
+        /// Handles the RowDataBound event of the gAuthClaims control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="GridViewRowEventArgs"/> instance containing the event data.</param>
         protected void gAuthClaims_RowDataBound( object sender, GridViewRowEventArgs e )
         {
             var authClaim = e.Row.DataItem as AuthClaim;
@@ -210,6 +224,34 @@ namespace RockWeb.Blocks.Security.Oidc
             }
 
             deleteButton.Visible = !authClaim.IsSystem;
+        }
+
+        /// <summary>
+        /// Handles the RowSelected event of the gAuthClaims control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RowEventArgs"/> instance containing the event data.</param>
+        protected void gAuthClaims_RowSelected( object sender, RowEventArgs e )
+        {
+            ShowDetail( e.RowKeyId );
+        }
+
+        /// <summary>
+        /// Handles the SaveClick event of the DlgClaimDetails control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        private void DlgClaimDetails_SaveClick( object sender, EventArgs e )
+        {
+            var claimId = hfAuthClaimId.Value.AsIntegerOrNull();
+            if ( claimId == null )
+            {
+                DisplayErrorMessage( "No Auth Claim Id was specified." );
+                return;
+            }
+
+            SaveAuthClaim( claimId.Value );
+
         }
         #endregion
 
@@ -286,6 +328,10 @@ namespace RockWeb.Blocks.Security.Oidc
             }
         }
 
+        /// <summary>
+        /// Displays the error message.
+        /// </summary>
+        /// <param name="message">The message.</param>
         private void DisplayErrorMessage( string message )
         {
             nbWarningMessage.Text = message;
@@ -294,13 +340,11 @@ namespace RockWeb.Blocks.Security.Oidc
             gAuthClaims.Visible = false;
             gfSettings.Visible = false;
         }
-        #endregion
 
-        protected void gAuthClaims_RowSelected( object sender, RowEventArgs e )
-        {
-            ShowDetail( e.RowKeyId );
-        }
-
+        /// <summary>
+        /// Shows the detail.
+        /// </summary>
+        /// <param name="authClaimId">The authentication claim identifier.</param>
         public void ShowDetail( int authClaimId )
         {
             AuthClaim authClaim = null;
@@ -327,7 +371,7 @@ namespace RockWeb.Blocks.Security.Oidc
                     return;
                 }
 
-                authClaim = new AuthClaim { Id = 0 };
+                authClaim = new AuthClaim { Id = 0, IsActive = true };
             }
 
             hfAuthClaimId.Value = authClaim.Id.ToString();
@@ -336,30 +380,23 @@ namespace RockWeb.Blocks.Security.Oidc
             tbClaimPublicName.Text = authClaim.PublicName;
             tbClaimValue.Text = authClaim.Value;
             cbClaimActive.Checked = authClaim.IsActive;
-            cbClaimIsSystem.Checked = authClaim.IsSystem;
 
+            nbEditModeMessage.Text = string.Empty;
             if ( authClaim.IsSystem )
             {
                 tbClaimName.Enabled = false;
-                tbClaimValue.Enabled = false;
+                tbClaimValue.Visible = false;
+                cbClaimActive.Enabled = false;
+                nbEditModeMessage.Text = EditModeMessage.System( Rock.Model.AuthClaim.FriendlyTypeName );
             }
 
             dlgClaimDetails.Show();
         }
 
-        private void DlgClaimDetails_SaveClick( object sender, EventArgs e )
-        {
-            var claimId = hfAuthClaimId.Value.AsIntegerOrNull();
-            if ( claimId == null )
-            {
-                DisplayErrorMessage( "No Auth Claim Id was specified." );
-                return;
-            }
-
-            SaveAuthClaim( claimId.Value );
-
-        }
-
+        /// <summary>
+        /// Saves the authentication claim.
+        /// </summary>
+        /// <param name="authClaimId">The authentication claim identifier.</param>
         private void SaveAuthClaim( int authClaimId )
         {
             var isNew = authClaimId.Equals( 0 );
@@ -402,15 +439,17 @@ namespace RockWeb.Blocks.Security.Oidc
                 {
                     authClaim.Name = tbClaimName.Text;
                     authClaim.Value = tbClaimValue.Text;
+                    authClaim.IsActive = cbClaimActive.Checked;
                 }
 
                 authClaim.PublicName = tbClaimPublicName.Text;
-                authClaim.IsActive = cbClaimActive.Checked;
 
                 rockContext.SaveChanges();
             }
             dlgClaimDetails.Hide();
             BindGrid();
         }
+
+        #endregion
     }
 }

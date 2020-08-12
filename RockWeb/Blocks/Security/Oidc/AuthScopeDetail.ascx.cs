@@ -26,13 +26,16 @@ using Rock.Web.UI;
 
 namespace RockWeb.Blocks.Security.Oidc
 {
-    [DisplayName( "Open Id Connect Scope Detail" )]
+    [DisplayName( "OpenID Connect Scope Detail" )]
     [Category( "Security > OIDC" )]
-    [Description( "Displays the details of the given Open Id Connect Scope." )]
+    [Description( "Displays the details of the given OpenID Connect Scope." )]
     public partial class AuthScopeDetail : Rock.Web.UI.RockBlock, IDetailBlock
     {
         private class PageParameterKeys
         {
+            /// <summary>
+            /// The scope identifier
+            /// </summary>
             public const string ScopeId = "ScopeId";
         }
 
@@ -81,46 +84,6 @@ namespace RockWeb.Blocks.Security.Oidc
             NavigateToParentPage();
         }
 
-        private void SaveAuthScope( int authScopeId )
-        {
-            var isNew = authScopeId.Equals( 0 );
-
-            var authScope = new AuthScope();
-
-            var editAllowed = authScope.IsAuthorized( Authorization.EDIT, CurrentPerson );
-            if ( !editAllowed )
-            {
-                DisplayErrorMessage( "The current user is not authorized to make changes." );
-                return;
-            }
-
-            var rockContext = new RockContext();
-            var authScopeService = new AuthScopeService( rockContext );
-            if ( isNew )
-            {
-                authScopeService.Add( authScope );
-            }
-            else
-            {
-                authScope = authScopeService.Get( authScopeId );
-            }
-
-            if ( authScope == null )
-            {
-                DisplayErrorMessage( "The Auth Scope with the specified Id was found." );
-                return;
-            }
-
-            if ( !authScope.IsSystem )
-            {
-                authScope.Name = tbName.Text;
-            }
-            authScope.PublicName = tbPublicName.Text;
-            authScope.IsActive = cbActive.Checked;
-
-            rockContext.SaveChanges();
-        }
-
         /// <summary>
         /// Handles the Click event of the lbCancel control.
         /// </summary>
@@ -133,6 +96,10 @@ namespace RockWeb.Blocks.Security.Oidc
         #endregion
 
         #region Internal Methods
+        /// <summary>
+        /// Displays the error message.
+        /// </summary>
+        /// <param name="message">The message.</param>
         private void DisplayErrorMessage( string message )
         {
             nbWarningMessage.Text = message;
@@ -169,28 +136,71 @@ namespace RockWeb.Blocks.Security.Oidc
                     return;
                 }
 
-                authScope = new AuthScope { Id = 0 };
+                authScope = new AuthScope { Id = 0, IsActive = true };
             }
 
             hfRestUserId.Value = authScope.Id.ToString();
 
-            if ( !isNew )
-            {
-                tbName.Text = authScope.Name;
-                tbPublicName.Text = authScope.PublicName;
-                cbActive.Checked = authScope.IsActive;
-                cbIsSystem.Checked = authScope.IsSystem;
+            tbName.Text = authScope.Name;
+            tbPublicName.Text = authScope.PublicName;
+            cbActive.Checked = authScope.IsActive;
 
-                if ( authScope.IsSystem )
-                {
-                    tbName.Enabled = false;
-                }
+            nbEditModeMessage.Text = string.Empty;
+            if ( authScope.IsSystem )
+            {
+                tbName.Enabled = false;
+                cbActive.Enabled = false;
+                nbEditModeMessage.Text = EditModeMessage.System( Rock.Model.AuthScope.FriendlyTypeName );
             }
 
             var editAllowed = authScope.IsAuthorized( Authorization.EDIT, CurrentPerson );
             lbSave.Visible = editAllowed;
         }
 
+        /// <summary>
+        /// Saves the authentication scope.
+        /// </summary>
+        /// <param name="authScopeId">The authentication scope identifier.</param>
+        private void SaveAuthScope( int authScopeId )
+        {
+            var isNew = authScopeId.Equals( 0 );
+
+            var authScope = new AuthScope();
+
+            var editAllowed = authScope.IsAuthorized( Authorization.EDIT, CurrentPerson );
+            if ( !editAllowed )
+            {
+                DisplayErrorMessage( "The current user is not authorized to make changes." );
+                return;
+            }
+
+            var rockContext = new RockContext();
+            var authScopeService = new AuthScopeService( rockContext );
+            if ( isNew )
+            {
+                authScopeService.Add( authScope );
+            }
+            else
+            {
+                authScope = authScopeService.Get( authScopeId );
+            }
+
+            if ( authScope == null )
+            {
+                DisplayErrorMessage( "The Auth Scope with the specified Id was found." );
+                return;
+            }
+
+            if ( !authScope.IsSystem )
+            {
+                authScope.Name = tbName.Text;
+                authScope.IsActive = cbActive.Checked;
+            }
+
+            authScope.PublicName = tbPublicName.Text;
+
+            rockContext.SaveChanges();
+        }
         #endregion
     }
 }

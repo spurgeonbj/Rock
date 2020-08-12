@@ -189,17 +189,17 @@ namespace Rock.Migrations
             // Add Page Logout to Site:External Website
             RockMigrationHelper.AddPage( true, Rock.SystemGuid.Page.SUPPORT_PAGES_EXTERNAL_SITE, "55E19934-762D-48E5-BD07-ACB1249ACBDC", "Logout", "", Rock.SystemGuid.Page.OIDC_LOGOUT, "" );
 
-            // Add Page Open Id Connect Scopes to Site:Rock RMS
-            RockMigrationHelper.AddPage( true, Rock.SystemGuid.Page.SECURITY_ROCK_SETTINGS, Rock.SystemGuid.Layout.FULL_WIDTH_INTERNAL_SITE, "Open Id Connect Scopes", "", Rock.SystemGuid.Page.OIDC_SCOPE_LIST, "" );
+            // Add Page OpenID Connect Client to Site:Rock RMS
+            RockMigrationHelper.AddPage( true, Rock.SystemGuid.Page.SECURITY_ROCK_SETTINGS, Rock.SystemGuid.Layout.FULL_WIDTH_INTERNAL_SITE, "OpenID Connect Clients", "", Rock.SystemGuid.Page.OIDC_CLIENT_LIST, "fa fa-openid" );
 
-            // Add Page Open Id Connect Scope Detail to Site:Rock RMS
-            RockMigrationHelper.AddPage( true, Rock.SystemGuid.Page.OIDC_SCOPE_LIST, Rock.SystemGuid.Layout.FULL_WIDTH_INTERNAL_SITE, "Open Id Connect Scope Detail", "", Rock.SystemGuid.Page.OIDC_SCOPE_DETAIL, "" );
+            // Add Page OpenID Connect Scopes to Site:Rock RMS
+            RockMigrationHelper.AddPage( true, Rock.SystemGuid.Page.OIDC_CLIENT_LIST, Rock.SystemGuid.Layout.FULL_WIDTH_INTERNAL_SITE, "OpenID Connect Scopes", "", Rock.SystemGuid.Page.OIDC_SCOPE_LIST, "" );
 
-            // Add Page Open Id Connect Client to Site:Rock RMS
-            RockMigrationHelper.AddPage( true, Rock.SystemGuid.Page.SECURITY_ROCK_SETTINGS, Rock.SystemGuid.Layout.FULL_WIDTH_INTERNAL_SITE, "Open Id Connect Client", "", Rock.SystemGuid.Page.OIDC_CLIENT_LIST, "" );
-
-            // Add Page Open Id Connect Client Detail to Site:Rock RMS
-            RockMigrationHelper.AddPage( true, Rock.SystemGuid.Page.OIDC_CLIENT_LIST, Rock.SystemGuid.Layout.FULL_WIDTH_INTERNAL_SITE, "Open Id Connect Client Detail", "", Rock.SystemGuid.Page.OIDC_CLIENT_DETAIL, "" );
+            // Add Page OpenID Connect Scope Detail to Site:Rock RMS
+            RockMigrationHelper.AddPage( true, Rock.SystemGuid.Page.OIDC_SCOPE_LIST, Rock.SystemGuid.Layout.FULL_WIDTH_INTERNAL_SITE, "OpenID Connect Scope Detail", "", Rock.SystemGuid.Page.OIDC_SCOPE_DETAIL, "" );
+                        
+            // Add Page OpenID Connect Client Detail to Site:Rock RMS
+            RockMigrationHelper.AddPage( true, Rock.SystemGuid.Page.OIDC_CLIENT_LIST, Rock.SystemGuid.Layout.FULL_WIDTH_INTERNAL_SITE, "OpenID Connect Client Detail", "", Rock.SystemGuid.Page.OIDC_CLIENT_DETAIL, "" );
 
             // Add Page Route for Give Permission
             RockMigrationHelper.AddPageRoute( Rock.SystemGuid.Page.OIDC_GIVE_PERMISSION, "Auth/Authorize", Rock.SystemGuid.PageRoute.OIDC_AUTHORIZE );
@@ -213,20 +213,20 @@ namespace Rock.Migrations
             // Add/Update BlockType Logout
             RockMigrationHelper.UpdateBlockType( "Logout", "Choose to authorize the auth client to access the user's data.", "~/Blocks/Security/Oidc/Logout.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_LOGOUT );
 
-            // Add/Update BlockType Open Id Connect Scopes
-            RockMigrationHelper.UpdateBlockType( "Open Id Connect Scopes", "Block for displaying and editing available Opend Id Connect scopes.", "~/Blocks/Security/Oidc/AuthScopeList.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_SCOPE_LIST );
+            // Add/Update BlockType OpenID Connect Scopes
+            RockMigrationHelper.UpdateBlockType( "OpenID Connect Scopes", "Block for displaying and editing available OpenID Connect scopes.", "~/Blocks/Security/Oidc/AuthScopeList.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_SCOPE_LIST );
 
-            // Add/Update BlockType Open Id Connect Scope Detail
-            RockMigrationHelper.UpdateBlockType( "Open Id Connect Scope Detail", "Displays the details of the given Open Id Connect Scope.", "~/Blocks/Security/Oidc/AuthScopeDetail.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_SCOPE_DETAIL );
+            // Add/Update BlockType OpenID Connect Scope Detail
+            RockMigrationHelper.UpdateBlockType( "OpenID Connect Scope Detail", "Displays the details of the given OpenID Connect Scope.", "~/Blocks/Security/Oidc/AuthScopeDetail.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_SCOPE_DETAIL );
 
-            // Add/Update BlockType Open Id Connect Scopes
-            RockMigrationHelper.UpdateBlockType( "Open Id Connect Scopes", "Block for displaying and editing available Opend Id Connect scopes.", "~/Blocks/Security/Oidc/AuthClaims.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_CLAIMS );
+            // Add/Update BlockType OpenID Connect Scopes
+            RockMigrationHelper.UpdateBlockType( "OpenID Connect Scopes", "Block for displaying and editing available OpenID Connect scopes.", "~/Blocks/Security/Oidc/AuthClaims.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_CLAIMS );
 
-            // Add/Update BlockType Open Id Connect Clients
-            RockMigrationHelper.UpdateBlockType( "Open Id Connect Clients", "Block for displaying and editing available Opend Id Connect clients.", "~/Blocks/Security/Oidc/AuthClientList.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_CLIENT_LIST );
+            // Add/Update BlockType OpenID Connect Clients
+            RockMigrationHelper.UpdateBlockType( "OpenID Connect Clients", "Block for displaying and editing available OpenID Connect clients.", "~/Blocks/Security/Oidc/AuthClientList.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_CLIENT_LIST );
 
-            // Add/Update BlockType Open Id Connect Client Detail
-            RockMigrationHelper.UpdateBlockType( "Open Id Connect Client Detail", "Displays the details of the given Open Id Connect Client.", "~/Blocks/Security/Oidc/AuthClientDetail.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_CLIENT_DETAIL );
+            // Add/Update BlockType OpenID Connect Client Detail
+            RockMigrationHelper.UpdateBlockType( "OpenID Connect Client Detail", "Displays the details of the given OpenID Connect Client.", "~/Blocks/Security/Oidc/AuthClientDetail.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_CLIENT_DETAIL );
 
             // Add Block Authorize to Page: Give Permission, Site: External Website
             RockMigrationHelper.AddBlock( true, Rock.SystemGuid.Page.OIDC_GIVE_PERMISSION.AsGuid(), null, Rock.SystemGuid.Site.EXTERNAL_SITE.AsGuid(), Rock.SystemGuid.BlockType.OIDC_AUTHORIZE.AsGuid(), "Authorize", "Main", @"", @"", 0, Rock.SystemGuid.Block.OIDC_AUTHORIZE );
@@ -234,41 +234,46 @@ namespace Rock.Migrations
             // Add Block Logout to Page: Logout, Site: External Website
             RockMigrationHelper.AddBlock( true, Rock.SystemGuid.Page.OIDC_LOGOUT.AsGuid(), null, Rock.SystemGuid.Site.EXTERNAL_SITE.AsGuid(), Rock.SystemGuid.BlockType.OIDC_LOGOUT.AsGuid(), "Logout", "Main", @"", @"", 0, Rock.SystemGuid.Block.OIDC_LOGOUT );
 
-            // Add Block Open Id Connect Scope List to Page: Open Id Connect Scopes, Site: Rock RMS
-            RockMigrationHelper.AddBlock( true, Rock.SystemGuid.Page.OIDC_SCOPE_LIST.AsGuid(), null, Rock.SystemGuid.Site.SITE_ROCK_INTERNAL.AsGuid(), Rock.SystemGuid.BlockType.OIDC_SCOPE_LIST.AsGuid(), "Open Id Connect Scope List", "Main", @"", @"", 0, Rock.SystemGuid.Block.OIDC_SCOPE_LIST );
+            // Add Block OpenID Connect Scope List to Page: OpenID Connect Scopes, Site: Rock RMS
+            RockMigrationHelper.AddBlock( true, Rock.SystemGuid.Page.OIDC_SCOPE_LIST.AsGuid(), null, Rock.SystemGuid.Site.SITE_ROCK_INTERNAL.AsGuid(), Rock.SystemGuid.BlockType.OIDC_SCOPE_LIST.AsGuid(), "OpenID Connect Scope List", "Main", @"", @"", 0, Rock.SystemGuid.Block.OIDC_SCOPE_LIST );
 
-            // Add Block Open Id Connect Scope Detail to Page: Open Id Connect Scope Detail, Site: Rock RMS
-            RockMigrationHelper.AddBlock( true, Rock.SystemGuid.Page.OIDC_SCOPE_DETAIL.AsGuid(), null, Rock.SystemGuid.Site.SITE_ROCK_INTERNAL.AsGuid(), Rock.SystemGuid.BlockType.OIDC_SCOPE_DETAIL.AsGuid(), "Open Id Connect Scope Detail", "Main", @"", @"", 0, Rock.SystemGuid.Block.OIDC_SCOPE_DETAIL );
+            // Add Block OpenID Connect Scope Detail to Page: OpenID Connect Scope Detail, Site: Rock RMS
+            RockMigrationHelper.AddBlock( true, Rock.SystemGuid.Page.OIDC_SCOPE_DETAIL.AsGuid(), null, Rock.SystemGuid.Site.SITE_ROCK_INTERNAL.AsGuid(), Rock.SystemGuid.BlockType.OIDC_SCOPE_DETAIL.AsGuid(), "OpenID Connect Scope Detail", "Main", @"", @"", 0, Rock.SystemGuid.Block.OIDC_SCOPE_DETAIL );
 
-            // Add Block Open Id Connect Claims 2 to Page: Open Id Connect Scope Detail, Site: Rock RMS
-            RockMigrationHelper.AddBlock( true, Rock.SystemGuid.Page.OIDC_SCOPE_DETAIL.AsGuid(), null, Rock.SystemGuid.Site.SITE_ROCK_INTERNAL.AsGuid(), Rock.SystemGuid.BlockType.OIDC_CLAIMS.AsGuid(), "Open Id Connect Claims", "Main", @"", @"", 2, Rock.SystemGuid.Block.OIDC_CLAIMS );
+            // Add Block OpenID Connect Claims 2 to Page: OpenID Connect Scope Detail, Site: Rock RMS
+            RockMigrationHelper.AddBlock( true, Rock.SystemGuid.Page.OIDC_SCOPE_DETAIL.AsGuid(), null, Rock.SystemGuid.Site.SITE_ROCK_INTERNAL.AsGuid(), Rock.SystemGuid.BlockType.OIDC_CLAIMS.AsGuid(), "OpenID Connect Claims", "Main", @"", @"", 2, Rock.SystemGuid.Block.OIDC_CLAIMS );
 
-            // Add Block Open Id Connect Clients to Page: Open Id Connect Client, Site: Rock RMS
-            RockMigrationHelper.AddBlock( true, Rock.SystemGuid.Page.OIDC_CLIENT_LIST.AsGuid(), null, Rock.SystemGuid.Site.SITE_ROCK_INTERNAL.AsGuid(), Rock.SystemGuid.BlockType.OIDC_CLIENT_LIST.AsGuid(), "Open Id Connect Clients", "Main", @"", @"", 0, Rock.SystemGuid.Block.OIDC_CLIENT_LIST );
+            // Add Block OpenID Connect Clients to Page: OpenID Connect Client, Site: Rock RMS
+            RockMigrationHelper.AddBlock( true, Rock.SystemGuid.Page.OIDC_CLIENT_LIST.AsGuid(), null, Rock.SystemGuid.Site.SITE_ROCK_INTERNAL.AsGuid(), Rock.SystemGuid.BlockType.OIDC_CLIENT_LIST.AsGuid(), "OpenID Connect Clients", "Main", @"", @"", 0, Rock.SystemGuid.Block.OIDC_CLIENT_LIST );
 
-            // Add Block Open Id Connect Client Detail to Page: Open Id Connect Client Detail, Site: Rock RMS
-            RockMigrationHelper.AddBlock( true, Rock.SystemGuid.Page.OIDC_CLIENT_DETAIL.AsGuid(), null, Rock.SystemGuid.Site.SITE_ROCK_INTERNAL.AsGuid(), Rock.SystemGuid.BlockType.OIDC_CLIENT_DETAIL.AsGuid(), "Open Id Connect Client Detail", "Main", @"", @"", 0, Rock.SystemGuid.Block.OIDC_CLIENT_DETAIL );
+            // Add Block OpenID Connect Client Detail to Page: OpenID Connect Client Detail, Site: Rock RMS
+            RockMigrationHelper.AddBlock( true, Rock.SystemGuid.Page.OIDC_CLIENT_DETAIL.AsGuid(), null, Rock.SystemGuid.Site.SITE_ROCK_INTERNAL.AsGuid(), Rock.SystemGuid.BlockType.OIDC_CLIENT_DETAIL.AsGuid(), "OpenID Connect Client Detail", "Main", @"", @"", 0, Rock.SystemGuid.Block.OIDC_CLIENT_DETAIL );
 
             // update block order for pages with new blocks if the page,zone has multiple blocks
 
-            // Update Order for Page: Open Id Connect Scope Detail,  Zone: Main,  Block: Open Id Connect Claims 2
+            // Update Order for Page: OpenID Connect Scope Detail,  Zone: Main,  Block: OpenID Connect Claims 2
             Sql( $"UPDATE [Block] SET [Order] = 2 WHERE [Guid] = '{Rock.SystemGuid.BlockType.OIDC_CLAIMS}'" );
 
-            // Update Order for Page: Open Id Connect Scope Detail,  Zone: Main,  Block: Open Id Connect Scope Detail
+            // Update Order for Page: OpenID Connect Scope Detail,  Zone: Main,  Block: OpenID Connect Scope Detail
             Sql( $"UPDATE [Block] SET [Order] = 0 WHERE [Guid] = '{Rock.SystemGuid.BlockType.OIDC_SCOPE_DETAIL}'" );
 
-            // Attribute for BlockType: Open Id Connect Scopes:Detail Page
+            // Attribute for BlockType: OpenID Connect Scopes:Detail Page
             RockMigrationHelper.AddOrUpdateBlockTypeAttribute( Rock.SystemGuid.BlockType.OIDC_SCOPE_LIST, Rock.SystemGuid.FieldType.PAGE_REFERENCE, "Detail Page", "DetailPage", "Detail Page", @"", 0, @"", Rock.SystemGuid.Attribute.OIDC_SCOPE_LIST_DETAIL_PAGE );
 
-            // Attribute for BlockType: Open Id Connect Clients:Detail Page
+            // Attribute for BlockType: OpenID Connect Clients:Detail Page
             RockMigrationHelper.AddOrUpdateBlockTypeAttribute( Rock.SystemGuid.BlockType.OIDC_CLIENT_LIST, Rock.SystemGuid.FieldType.PAGE_REFERENCE, "Detail Page", "DetailPage", "Detail Page", @"", 0, @"", Rock.SystemGuid.Attribute.OIDC_CLIENT_LIST_DETAIL_PAGE );
 
-            // Block Attribute Value for Open Id Connect Scope List ( Page: Open Id Connect Scopes, Site: Rock RMS )
+            // Attribute for BlockType: OpenID Connect Clients:Detail Page
+            RockMigrationHelper.AddOrUpdateBlockTypeAttribute( Rock.SystemGuid.BlockType.OIDC_CLIENT_LIST, Rock.SystemGuid.FieldType.PAGE_REFERENCE, "OpenID Connect Scopes Page", "ScopePage", "OpenID Connect Scopes Page", @"", 0, @"", Rock.SystemGuid.Attribute.OIDC_CLIENT_LIST_SCOPE_PAGE );
+
+            // Block Attribute Value for OpenID Connect Scope List ( Page: OpenID Connect Scopes, Site: Rock RMS )
             RockMigrationHelper.AddBlockAttributeValue( Rock.SystemGuid.Block.OIDC_SCOPE_LIST, Rock.SystemGuid.Attribute.OIDC_SCOPE_LIST_DETAIL_PAGE, @Rock.SystemGuid.Page.OIDC_SCOPE_DETAIL );
 
-            // Block Attribute Value for Open Id Connect Clients ( Page: Open Id Connect Client, Site: Rock RMS )
+            // Block Attribute Value for OpenID Connect Clients ( Page: OpenID Connect Clients, Site: Rock RMS )
             RockMigrationHelper.AddBlockAttributeValue( Rock.SystemGuid.Block.OIDC_CLIENT_LIST, Rock.SystemGuid.Attribute.OIDC_CLIENT_LIST_DETAIL_PAGE, @Rock.SystemGuid.Page.OIDC_CLIENT_DETAIL );
 
+            // Block Attribute Value for OpenID Connect Clients ( Page: OpenID Connect Clients, Site: Rock RMS )
+            RockMigrationHelper.AddBlockAttributeValue( Rock.SystemGuid.Block.OIDC_CLIENT_LIST, Rock.SystemGuid.Attribute.OIDC_CLIENT_LIST_SCOPE_PAGE, @Rock.SystemGuid.Page.OIDC_SCOPE_LIST );
         }
     }
 }
