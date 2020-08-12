@@ -33,13 +33,13 @@ using Rock.Model;
 using Rock.Oidc.Authorization;
 using Rock.Web.UI;
 
-namespace RockWeb.Blocks.Oidc
+namespace RockWeb.Blocks.Security.Oidc
 {
     /// <summary>
     /// Prompts user for login credentials.
     /// </summary>
     [DisplayName( "Authorize" )]
-    [Category( "Oidc" )]
+    [Category( "Security > OIDC" )]
     [Description( "Choose to authorize the auth client to access the user's data." )]
 
     public partial class Authorize : RockBlock

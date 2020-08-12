@@ -1,18 +1,14 @@
-﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="AuthScopeList.ascx.cs" Inherits="RockWeb.Blocks.Oidc.AuthScopeList" %>
+﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="AuthClientList.ascx.cs" Inherits="RockWeb.Blocks.Security.Oidc.AuthClientList" %>
 <asp:UpdatePanel ID="upnlContent" runat="server">
     <ContentTemplate>
         <asp:Panel ID="pnlList" CssClass="panel panel-block" runat="server">
-
-            <Rock:ModalAlert ID="maGridWarning" runat="server" />
-
             <div class="panel-heading">
-                <h1 class="panel-title"><i class="fa fa-openid"></i>Open Id Connect Scopes</h1>
+                <h1 class="panel-title"><i class="fa fa-openid"></i>Open Id Connect Clients</h1>
             </div>
             <div class="panel-body">
                 <div class="grid grid-panel">
                     <Rock:GridFilter ID="gfSettings" runat="server">
                         <Rock:RockTextBox ID="tbName" runat="server" Label="Name"></Rock:RockTextBox>
-                        <Rock:RockTextBox ID="tbPublicName" runat="server" Label="Public Name"></Rock:RockTextBox>
                         <Rock:RockDropDownList ID="ddlActiveFilter" runat="server" Label="Active Status">
                             <asp:ListItem Text="[All]" Value="all"></asp:ListItem>
                             <asp:ListItem Text="Active" Value="active"></asp:ListItem>
@@ -20,18 +16,17 @@
                         </Rock:RockDropDownList>
                     </Rock:GridFilter>
 
-                    <Rock:Grid ID="gAuthScopes" runat="server"
+                    <Rock:Grid ID="gAuthClients" runat="server"
                         AllowSorting="true"
-                        RowItemText="Scope"
-                        OnRowDataBound="gAuthScopes_RowDataBound"
+                        RowItemText="Authentication Client"
+                        OnRowDataBound="gAuthClients_RowDataBound"
                         ShowConfirmDeleteDialog="true"
-                        OnRowSelected="gAuthScopes_RowSelected">
+                        OnRowSelected="gAuthClients_RowSelected">
                         <Columns>
                             <asp:BoundField HeaderText="Name" DataField="Name" SortExpression="Name" />
-                            <asp:BoundField HeaderText="Public Name" DataField="PublicName" SortExpression="PublicName" />
+                            <asp:BoundField HeaderText="Client Id" DataField="ClientId" />
                             <Rock:BoolField DataField="IsActive" HeaderText="Active" SortExpression="IsActive" />
-                            <Rock:BoolField DataField="IsSystem" HeaderText="System" SortExpression="IsSystem" />
-                            <Rock:DeleteField ID="dfDeleteScope" OnClick="gAuthScopes_Delete" />
+                            <Rock:DeleteField ID="dfDeleteScope" OnClick="gAuthClients_Delete" />
                         </Columns>
                     </Rock:Grid>
                 </div>

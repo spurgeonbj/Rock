@@ -265,12 +265,12 @@ namespace Rock.Security.Authentication
         }
 
         /// <summary>
-        /// Determines whether [is bcrypt match] [the specified hash].
+        /// Determines whether the hash matches the password using the same hash.
         /// </summary>
         /// <param name="hash">The hash.</param>
         /// <param name="password">The password.</param>
         /// <returns>
-        ///   <c>true</c> if [is bcrypt match] [the specified hash]; otherwise, <c>false</c>.
+        ///   <c>true</c> if the hash and hashed password match; otherwise, <c>false</c>.
         /// </returns>
         public bool IsBcryptMatch( string hash, string password )
         {

@@ -184,6 +184,7 @@ namespace Rock.Migrations
 
             // Add Page Give Permission to Site:External Website
             RockMigrationHelper.AddPage( true, Rock.SystemGuid.Page.SECURITY_ADMIN_TOOLS, Rock.SystemGuid.Layout.FULL_WIDTH, "Give Permission", "", Rock.SystemGuid.Page.OIDC_GIVE_PERMISSION, "" );
+            RockMigrationHelper.AddSecurityAuthForPage( Rock.SystemGuid.Page.OIDC_GIVE_PERMISSION, 0, Rock.Security.Authorization.VIEW, true, null, ( int ) Rock.Model.SpecialRole.AllAuthenticatedUsers, "AB7172FB-F504-4772-B6BD-62F5600C0EB9" );
 
             // Add Page Logout to Site:External Website
             RockMigrationHelper.AddPage( true, Rock.SystemGuid.Page.SUPPORT_PAGES_EXTERNAL_SITE, "55E19934-762D-48E5-BD07-ACB1249ACBDC", "Logout", "", Rock.SystemGuid.Page.OIDC_LOGOUT, "" );
@@ -207,25 +208,25 @@ namespace Rock.Migrations
             RockMigrationHelper.AddPageRoute( Rock.SystemGuid.Page.OIDC_LOGOUT, "Auth/Logout", Rock.SystemGuid.PageRoute.OIDC_LOGOUT );
 
             // Add/Update BlockType Authorize
-            RockMigrationHelper.UpdateBlockType( "Authorize", "Choose to authorize the auth client to access the user's data.", "~/Blocks/Oidc/Authorize.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_AUTHORIZE );
+            RockMigrationHelper.UpdateBlockType( "Authorize", "Choose to authorize the auth client to access the user's data.", "~/Blocks/Security/Oidc/Authorize.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_AUTHORIZE );
 
             // Add/Update BlockType Logout
-            RockMigrationHelper.UpdateBlockType( "Logout", "Choose to authorize the auth client to access the user's data.", "~/Blocks/Oidc/Logout.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_LOGOUT );
+            RockMigrationHelper.UpdateBlockType( "Logout", "Choose to authorize the auth client to access the user's data.", "~/Blocks/Security/Oidc/Logout.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_LOGOUT );
 
             // Add/Update BlockType Open Id Connect Scopes
-            RockMigrationHelper.UpdateBlockType( "Open Id Connect Scopes", "Block for displaying and editing available Opend Id Connect scopes.", "~/Blocks/Oidc/AuthScopeList.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_SCOPE_LIST );
+            RockMigrationHelper.UpdateBlockType( "Open Id Connect Scopes", "Block for displaying and editing available Opend Id Connect scopes.", "~/Blocks/Security/Oidc/AuthScopeList.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_SCOPE_LIST );
 
             // Add/Update BlockType Open Id Connect Scope Detail
-            RockMigrationHelper.UpdateBlockType( "Open Id Connect Scope Detail", "Displays the details of the given Open Id Connect Scope.", "~/Blocks/Oidc/AuthScopeDetail.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_SCOPE_DETAIL );
+            RockMigrationHelper.UpdateBlockType( "Open Id Connect Scope Detail", "Displays the details of the given Open Id Connect Scope.", "~/Blocks/Security/Oidc/AuthScopeDetail.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_SCOPE_DETAIL );
 
             // Add/Update BlockType Open Id Connect Scopes
-            RockMigrationHelper.UpdateBlockType( "Open Id Connect Scopes", "Block for displaying and editing available Opend Id Connect scopes.", "~/Blocks/Oidc/AuthClaims.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_CLAIMS );
+            RockMigrationHelper.UpdateBlockType( "Open Id Connect Scopes", "Block for displaying and editing available Opend Id Connect scopes.", "~/Blocks/Security/Oidc/AuthClaims.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_CLAIMS );
 
             // Add/Update BlockType Open Id Connect Clients
-            RockMigrationHelper.UpdateBlockType( "Open Id Connect Clients", "Block for displaying and editing available Opend Id Connect clients.", "~/Blocks/Oidc/AuthClientList.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_CLIENT_LIST );
+            RockMigrationHelper.UpdateBlockType( "Open Id Connect Clients", "Block for displaying and editing available Opend Id Connect clients.", "~/Blocks/Security/Oidc/AuthClientList.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_CLIENT_LIST );
 
             // Add/Update BlockType Open Id Connect Client Detail
-            RockMigrationHelper.UpdateBlockType( "Open Id Connect Client Detail", "Displays the details of the given Open Id Connect Client.", "~/Blocks/Oidc/AuthClientDetail.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_CLIENT_DETAIL );
+            RockMigrationHelper.UpdateBlockType( "Open Id Connect Client Detail", "Displays the details of the given Open Id Connect Client.", "~/Blocks/Security/Oidc/AuthClientDetail.ascx", "Oidc", Rock.SystemGuid.BlockType.OIDC_CLIENT_DETAIL );
 
             // Add Block Authorize to Page: Give Permission, Site: External Website
             RockMigrationHelper.AddBlock( true, Rock.SystemGuid.Page.OIDC_GIVE_PERMISSION.AsGuid(), null, Rock.SystemGuid.Site.EXTERNAL_SITE.AsGuid(), Rock.SystemGuid.BlockType.OIDC_AUTHORIZE.AsGuid(), "Authorize", "Main", @"", @"", 0, Rock.SystemGuid.Block.OIDC_AUTHORIZE );

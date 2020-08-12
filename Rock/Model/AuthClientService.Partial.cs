@@ -38,7 +38,6 @@ namespace Rock.Model
             return await Queryable().AsNoTracking().FirstOrDefaultAsync( ac => ac.ClientId == clientId );
         }
 
-
         /// <summary>
         /// Gets the by client identifier.
         /// </summary>

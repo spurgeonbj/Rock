@@ -1,4 +1,4 @@
-﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="AuthClaims.ascx.cs" Inherits="RockWeb.Blocks.Oidc.AuthClaims" %>
+﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="AuthClaims.ascx.cs" Inherits="RockWeb.Blocks.Security.Oidc.AuthClaims" %>
 <asp:UpdatePanel ID="upnlContent" runat="server">
     <ContentTemplate>
         <asp:Panel ID="pnlList" CssClass="panel panel-block" runat="server">

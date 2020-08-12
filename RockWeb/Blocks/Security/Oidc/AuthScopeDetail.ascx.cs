@@ -24,10 +24,10 @@ using Rock.Model;
 using Rock.Security;
 using Rock.Web.UI;
 
-namespace RockWeb.Blocks.Oidc
+namespace RockWeb.Blocks.Security.Oidc
 {
     [DisplayName( "Open Id Connect Scope Detail" )]
-    [Category( "Oidc" )]
+    [Category( "Security > OIDC" )]
     [Description( "Displays the details of the given Open Id Connect Scope." )]
     public partial class AuthScopeDetail : Rock.Web.UI.RockBlock, IDetailBlock
     {

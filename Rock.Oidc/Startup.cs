@@ -67,10 +67,10 @@ namespace Rock.Oidc
             app.UseOpenIdConnectServer( options =>
             {
                 options.Provider = new AuthorizationProvider();
-                // TODO: Should be setting.
+
                 options.Issuer = new Uri( GlobalAttributesCache.Get().GetValue( "PublicApplicationRoot" ).EnsureTrailingForwardslash() );
 
-                // TODO: Should be settings.
+                // TODO: Perhaps configurable in in v2?
                 options.AuthorizationEndpointPath = new PathString( Paths.AuthorizePath );
                 options.LogoutEndpointPath = new PathString( Paths.LogoutPath );
                 options.TokenEndpointPath = new PathString( Paths.TokenPath );
