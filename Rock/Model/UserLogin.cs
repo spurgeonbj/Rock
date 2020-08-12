@@ -22,6 +22,7 @@ using System.Data.Entity.Infrastructure;
 using System.Data.Entity.ModelConfiguration;
 using System.Linq;
 using System.Runtime.Serialization;
+using System.Security.Claims;
 using System.Security.Principal;
 using System.Threading;
 using System.Web;
@@ -467,9 +468,22 @@ namespace Rock.Model
             if ( HostingEnvironment.IsHosted )
             {
                 HttpContext current = HttpContext.Current;
-                if ( current != null && current.User != null )
+                if ( current != null && current.User != null && current.User.Identity.Name.IsNotNullOrWhiteSpace() )
+                {
                     return current.User.Identity.Name;
+                }
+
+                var claimsPrincipal = current.User as ClaimsPrincipal;
+                if( claimsPrincipal != null )
+                {
+                    var userName = claimsPrincipal.Identities.Where( i => !string.IsNullOrWhiteSpace(i.Name) ).FirstOrDefault()?.Name;
+                    if ( userName.IsNotNullOrWhiteSpace() )
+                    {
+                        return userName;
+                    }
+                }
             }
+
             IPrincipal currentPrincipal = Thread.CurrentPrincipal;
             if ( currentPrincipal == null || currentPrincipal.Identity == null )
                 return string.Empty;

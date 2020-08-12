@@ -543,7 +543,7 @@ Thank you for logging in, however, we need to confirm the email associated with 
         {
             var ctx = Request.GetOwinContext();
             ctx.Authentication.Challenge( "OpenIdConnectClient" );
-            Response.End();
+            //Response.End();
         }
     }
 

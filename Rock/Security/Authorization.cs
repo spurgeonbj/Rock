@@ -22,7 +22,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Web;
 using System.Web.Security;
-
+using Microsoft.Owin;
 using Rock.Data;
 using Rock.Model;
 using Rock.Utility;
@@ -805,6 +805,36 @@ namespace Rock.Security
 
         }
 
+        public static void SetAuthCookie( IOwinResponse response, string userName, bool isPersisted, bool IsImpersonated )
+        {
+            var ticket = new FormsAuthenticationTicket( 1, userName, RockDateTime.Now,
+                RockDateTime.Now.Add( FormsAuthentication.Timeout ), isPersisted,
+                IsImpersonated.ToString(), FormsAuthentication.FormsCookiePath );
+
+            var authCookie = GetAuthCookie( GetCookieDomain(), FormsAuthentication.Encrypt( ticket ) );
+            if ( ticket.IsPersistent )
+            {
+                authCookie.Expires = ticket.Expiration;
+            }
+            response.Cookies.Append( FormsAuthentication.FormsCookieName, FormsAuthentication.Encrypt( ticket ), GetAuthCookieOptions( GetCookieDomain() ) );
+
+            // If cookie is for a more generic domain, we need to store that domain so that we can expire it correctly 
+            // when the user signs out.
+            if ( !authCookie.Domain.IsNotNullOrWhiteSpace() )
+            {
+                return;
+            }
+
+            response.Cookies.Append( $"{FormsAuthentication.FormsCookieName}_DOMAIN", authCookie.Domain, new CookieOptions
+            {
+                HttpOnly = true,
+                Domain = authCookie.Domain,
+                Path = FormsAuthentication.FormsCookiePath,
+                Secure = FormsAuthentication.RequireSSL,
+                Expires = authCookie.Expires
+            } );
+        }
+
         /// <summary>
         /// Signs a user out of rock by deleting the appropriate forms authentication cookies
         /// </summary>
@@ -876,6 +906,22 @@ namespace Rock.Security
             return httpCookie;
         }
 
+        private static CookieOptions GetAuthCookieOptions( string domain )
+        {
+            // Get the SameSite setting from the Global Attributes. If not set then default to Lax. Official IETF values are "Lax" and "Strict" so if None was selected don't put the setting in the cookie.
+            SameSiteCookieSetting sameSiteCookieSetting = GlobalAttributesCache.Get().GetValue( "core_SameSiteCookieSetting" ).ConvertToEnumOrNull<SameSiteCookieSetting>() ?? SameSiteCookieSetting.Lax;
+            string sameSiteCookieValue = sameSiteCookieSetting == SameSiteCookieSetting.None ? string.Empty : ";SameSite=" + sameSiteCookieSetting;
+
+            var httpCookie = new CookieOptions
+            {
+                Domain = domain.IsNotNullOrWhiteSpace() ? domain : FormsAuthentication.CookieDomain,
+                HttpOnly = true,
+                Path = FormsAuthentication.FormsCookiePath + sameSiteCookieValue,
+                Secure = FormsAuthentication.RequireSSL
+            };
+
+            return httpCookie;
+        }
 
         /// <summary>
         /// Gets the domain for the forms authentication cookie. This is based on whether the current host name has an entry in the 'Domains Sharing Logins' defined type.

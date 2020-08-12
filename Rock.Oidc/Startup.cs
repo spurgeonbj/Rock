@@ -17,6 +17,8 @@
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Net.Http;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -58,92 +60,7 @@ namespace Rock.Oidc
             } );
 
             // Insert a new OIDC client middleware in the pipeline.
-            app.UseOpenIdConnectAuthentication( new OpenIdConnectAuthenticationOptions
-            {
-                AuthenticationMode = AuthenticationMode.Active,
-                AuthenticationType = "OpenIdConnectClient",
-                // Note: setting the Authority allows the OIDC client middleware to automatically
-                // retrieve the identity provider's configuration and spare you from setting
-                // the different endpoints URIs or the token validation parameters explicitly.
-                Authority = "http://localhost:54541/",
-                
-                // Note: these settings must match the application details inserted in
-                // the database at the server level (see ApplicationContextInitializer.cs).
-                ClientId = "myClient",
-                ClientSecret = "secret_secret_secret",
-                RedirectUri = "http://localhost:6229/signin-oidc",
-                PostLogoutRedirectUri = "http://localhost:6229/signout-callback-oidc",
-
-                Scope = "openid profile",
-                ResponseType = "code",
-                // Note: by default, the OIDC client throws an OpenIdConnectProtocolException
-                // when an error occurred during the authentication/authorization process.
-                // To prevent a YSOD from being displayed, the response is declared as handled.
-                //Notifications = new OpenIdConnectAuthenticationNotifications
-                //{
-                //    AuthenticationFailed = notification =>
-                //    {
-                //        if ( string.Equals( notification.ProtocolMessage.Error, "access_denied", StringComparison.Ordinal ) )
-                //        {
-                //            notification.HandleResponse();
-
-                //            notification.Response.Redirect( "/" );
-                //        }
-
-                //        return Task.FromResult(0);
-                //    },
-
-                //    // Retrieve an access token from the remote token endpoint
-                //    // using the authorization code received during the current request.
-                //    AuthorizationCodeReceived = async notification =>
-                //    {
-                //        using ( var client = new HttpClient() )
-                //        {
-                //            var configuration = await notification.Options.ConfigurationManager.GetConfigurationAsync( notification.Request.CallCancelled );
-
-                //            var request = new HttpRequestMessage( HttpMethod.Post, configuration.TokenEndpoint );
-                //            request.Content = new FormUrlEncodedContent( new Dictionary<string, string>
-                //            {
-                //                [OpenIdConnectParameterNames.ClientId] = notification.Options.ClientId,
-                //                [OpenIdConnectParameterNames.ClientSecret] = notification.Options.ClientSecret,
-                //                [OpenIdConnectParameterNames.Code] = notification.ProtocolMessage.Code,
-                //                [OpenIdConnectParameterNames.GrantType] = "authorization_code",
-                //                [OpenIdConnectParameterNames.RedirectUri] = notification.Options.RedirectUri
-                //            } );
-
-                //            var response = await client.SendAsync( request, notification.Request.CallCancelled );
-                //            response.EnsureSuccessStatusCode();
-
-                //            var payload = JObject.Parse( await response.Content.ReadAsStringAsync() );
-
-                //            // Add the access token to the returned ClaimsIdentity to make it easier to retrieve.
-                //            notification.AuthenticationTicket.Identity.AddClaim( new Claim(
-                //                type: OpenIdConnectParameterNames.AccessToken,
-                //                value: payload.Value<string>( OpenIdConnectParameterNames.AccessToken ) ) );
-
-                //            // Add the identity token to the returned ClaimsIdentity to make it easier to retrieve.
-                //            notification.AuthenticationTicket.Identity.AddClaim( new Claim(
-                //                type: OpenIdConnectParameterNames.IdToken,
-                //                value: payload.Value<string>( OpenIdConnectParameterNames.IdToken ) ) );
-                //        }
-                //    },
-
-                //    // Attach the id_token stored in the authentication cookie to the logout request.
-                //    RedirectToIdentityProvider = notification =>
-                //    {
-                //        if ( notification.ProtocolMessage.RequestType == OpenIdConnectRequestType.LogoutRequest )
-                //        {
-                //            var token = notification.OwinContext.Authentication.User?.FindFirst( OpenIdConnectParameterNames.IdToken );
-                //            if ( token != null )
-                //            {
-                //                notification.ProtocolMessage.IdTokenHint = token.Value;
-                //            }
-                //        }
-
-                //        return Task.FromResult(0);
-                //    }
-                //}
-            } );
+            
 
             app.SetDefaultSignInAsAuthenticationType( "ClientCookie" );
 
@@ -171,6 +88,102 @@ namespace Rock.Oidc
                 foreach ( var key in rockSigningCredentials.SigningKeys )
                 {
                     options.SigningCredentials.AddKey( new RsaSecurityKey( key ) );
+                }
+            } );
+
+            app.UseOpenIdConnectAuthentication( new OpenIdConnectAuthenticationOptions
+            {
+                AuthenticationMode = AuthenticationMode.Active,
+                AuthenticationType = "OpenIdConnectClient",
+                // Note: setting the Authority allows the OIDC client middleware to automatically
+                // retrieve the identity provider's configuration and spare you from setting
+                // the different endpoints URIs or the token validation parameters explicitly.
+                Authority = "http://localhost:54541/",
+
+                // Note: these settings must match the application details inserted in
+                // the database at the server level (see ApplicationContextInitializer.cs).
+                ClientId = "myRockClient",
+                ClientSecret = "secret_secret_secret",
+                RedirectUri = "http://localhost:6229/oidc",
+                PostLogoutRedirectUri = "http://localhost:6229/",
+
+                Scope = "openid profile",
+
+                // Note: by default, the OIDC client throws an OpenIdConnectProtocolException
+                // when an error occurred during the authentication/authorization process.
+                // To prevent a YSOD from being displayed, the response is declared as handled.
+                Notifications = new OpenIdConnectAuthenticationNotifications
+                {
+                    AuthenticationFailed = notification =>
+                    {
+                        if ( string.Equals( notification.ProtocolMessage.Error, "access_denied", StringComparison.Ordinal ) )
+                        {
+                            notification.HandleResponse();
+
+                            notification.Response.Redirect( "/" );
+                        }
+
+                        return Task.FromResult( 0 );
+                    },
+
+                    // Retrieve an access token from the remote token endpoint
+                    // using the authorization code received during the current request.
+                    AuthorizationCodeReceived = async notification =>
+                    {
+                        using ( var client = new HttpClient() )
+                        {
+                            var configuration = await notification.Options.ConfigurationManager.GetConfigurationAsync( notification.Request.CallCancelled );
+
+                            var request = new HttpRequestMessage( HttpMethod.Post, configuration.TokenEndpoint );
+                            request.Content = new FormUrlEncodedContent( new Dictionary<string, string>
+                            {
+                                [OpenIdConnectParameterNames.ClientId] = notification.Options.ClientId,
+                                [OpenIdConnectParameterNames.ClientSecret] = notification.Options.ClientSecret,
+                                [OpenIdConnectParameterNames.Code] = notification.ProtocolMessage.Code,
+                                [OpenIdConnectParameterNames.GrantType] = "authorization_code",
+                                [OpenIdConnectParameterNames.RedirectUri] = notification.Options.RedirectUri
+                            } );
+
+                            var response = await client.SendAsync( request, notification.Request.CallCancelled );
+                            response.EnsureSuccessStatusCode();
+
+                            var payload = JObject.Parse( await response.Content.ReadAsStringAsync() );
+
+                            // Add the access token to the returned ClaimsIdentity to make it easier to retrieve.
+                            notification.AuthenticationTicket.Identity.AddClaim( new Claim(
+                                type: OpenIdConnectParameterNames.AccessToken,
+                                value: payload.Value<string>( OpenIdConnectParameterNames.AccessToken ) ) );
+
+                            // Add the identity token to the returned ClaimsIdentity to make it easier to retrieve.
+                            var idToken = payload.Value<string>( OpenIdConnectParameterNames.IdToken );
+                            notification.AuthenticationTicket.Identity.AddClaim( new Claim(
+                                type: OpenIdConnectParameterNames.IdToken,
+                                value:  idToken) );
+
+                            var jwtTokenHandler = new JwtSecurityTokenHandler();
+                            var jwtToken = jwtTokenHandler.ReadJwtToken( idToken );
+
+                            var userName = jwtToken.Claims.Where( c => c.Type == "sub" || c.Type == "name" ).FirstOrDefault()?.Value;
+                            if ( userName.IsNotNullOrWhiteSpace() )
+                            {
+                                Rock.Security.Authorization.SetAuthCookie( notification.Response, userName, false, false );
+                            }
+                        }
+                    },
+                    // Attach the id_token stored in the authentication cookie to the logout request.
+                    RedirectToIdentityProvider = notification =>
+                    {
+                        if ( notification.ProtocolMessage.RequestType == OpenIdConnectRequestType.LogoutRequest )
+                        {
+                            var token = notification.OwinContext.Authentication.User?.FindFirst( OpenIdConnectParameterNames.IdToken );
+                            if ( token != null )
+                            {
+                                notification.ProtocolMessage.IdTokenHint = token.Value;
+                            }
+                        }
+
+                        return Task.FromResult( 0 );
+                    }
                 }
             } );
         }
