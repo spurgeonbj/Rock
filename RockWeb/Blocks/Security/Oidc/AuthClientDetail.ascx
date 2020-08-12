@@ -13,13 +13,11 @@
                     <asp:ValidationSummary ID="valSummary" runat="server" HeaderText="Please correct the following:" CssClass="alert alert-validation" />
                     <asp:HiddenField ID="hfRestUserId" runat="server" />
                     <div class="row">
-                        <div class="col-md-12">
+                        <div class="col-md-6">
                             <Rock:RockTextBox ID="tbName" Required="true" Label="Name" runat="server" CssClass="form-group" />
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-3">
-                            <Rock:RockCheckBox ID="cbActive" runat="server" Checked="true" Text="Active" />
+                        <div class="col-sm-6">
+                            <Rock:RockCheckBox ID="cbActive" runat="server" Checked="true" Label="Active" />
                         </div>
                     </div>
                     <div class="row">
@@ -40,6 +38,8 @@
                     </div>
                     <div class="row">
                         <div class="col-md-12">
+                            <h6 class="text-danger">Allowed Scopes and Claims<Rock:HelpBlock runat="server" Text="These are the claims that are allowed to be returned if requested by the client." /></h6>
+                            
                             <asp:Panel ID="litClaims" runat="server" />
                         </div>
                     </div>

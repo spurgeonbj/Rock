@@ -1,4 +1,4 @@
-﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="AuthScopeList.ascx.cs" Inherits="RockWeb.Blocks.Oidc.Security.AuthScopeList" %>
+﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="AuthScopeList.ascx.cs" Inherits="RockWeb.Blocks.Security.Oidc.AuthScopeList" %>
 <asp:UpdatePanel ID="upnlContent" runat="server">
     <ContentTemplate>
         <asp:Panel ID="pnlList" CssClass="panel panel-block" runat="server">
@@ -6,7 +6,7 @@
             <Rock:ModalAlert ID="maGridWarning" runat="server" />
 
             <div class="panel-heading">
-                <h1 class="panel-title"><i class="fa fa-openid"></i>Open Id Connect Scopes</h1>
+                <h1 class="panel-title"><i class="fa fa-openid"></i>OpenID Connect Scopes</h1>
             </div>
             <div class="panel-body">
                 <div class="grid grid-panel">

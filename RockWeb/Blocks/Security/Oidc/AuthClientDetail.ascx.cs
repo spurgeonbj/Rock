@@ -33,23 +33,31 @@ using Rock.Web.UI.Controls;
 
 namespace RockWeb.Blocks.Security.Oidc
 {
-    [DisplayName( "Open Id Connect Client Detail" )]
+    [DisplayName( "OpenID Connect Client Detail" )]
     [Category( "Security > OIDC" )]
-    [Description( "Displays the details of the given Open Id Connect Client." )]
+    [Description( "Displays the details of the given OpenID Connect Client." )]
     public partial class AuthClientDetail : Rock.Web.UI.RockBlock, IDetailBlock
     {
         private class PageParameterKeys
         {
+            /// <summary>
+            /// The authentication client identifier
+            /// </summary>
             public const string AuthClientId = "AuthClientId";
         }
 
         #region Control Methods
 
+        /// <summary>
+        /// Raises the <see cref="E:System.Web.UI.Control.Init" /> event.
+        /// </summary>
+        /// <param name="e">An <see cref="T:System.EventArgs" /> object that contains the event data.</param>
         protected override void OnInit( EventArgs e )
         {
             AddClaimsCheckboxes();
             base.OnInit( e );
         }
+
         /// <summary>
         /// Raises the <see cref="E:System.Web.UI.Control.Load" /> event.
         /// </summary>
@@ -93,74 +101,6 @@ namespace RockWeb.Blocks.Security.Oidc
             NavigateToParentPage();
         }
 
-        private void SaveAuthClient( int authScopeId )
-        {
-            var isNew = authScopeId.Equals( 0 );
-
-            var authClient = new AuthClient();
-
-            var editAllowed = authClient.IsAuthorized( Authorization.EDIT, CurrentPerson );
-            if ( !editAllowed )
-            {
-                DisplayErrorMessage( "The current user is not authorized to make changes." );
-                return;
-            }
-
-            var rockContext = new RockContext();
-            var authClientService = new AuthClientService( rockContext );
-            if ( isNew )
-            {
-                authClientService.Add( authClient );
-            }
-            else
-            {
-                authClient = authClientService.Get( authScopeId );
-            }
-
-            if ( authClient == null )
-            {
-                DisplayErrorMessage( "The Auth Client with the specified Id was found." );
-                return;
-            }
-
-            authClient.Name = tbName.Text;
-            authClient.IsActive = cbActive.Checked;
-            authClient.ClientId = tbClientId.Text;
-            
-            authClient.RedirectUri = tbRedirectUri.Text;
-            authClient.PostLogoutRedirectUri = tbPostLogoutRedirectUri.Text;
-
-            if ( tbClientSecret.Text.IsNotNullOrWhiteSpace() )
-            {
-                var entityTypeName = EntityTypeCache.Get<Rock.Security.Authentication.Database>().Name;
-                var databaseAuth = AuthenticationContainer.GetComponent( entityTypeName ) as Rock.Security.Authentication.Database;
-                var encryptedClientSecret = databaseAuth.EncryptString( tbClientSecret.Text );
-                authClient.ClientSecretHash = encryptedClientSecret;
-            }
-
-            var activeClaims = GetActiveClaims( rockContext ).Select( ac => ac.ScopeName ).Distinct();
-            var selectedClaims = new List<string>( activeClaims.Count() );
-            var selectedScopes = new List<string>( activeClaims.Count() );
-            foreach ( var scope in activeClaims )
-            {
-                var checkboxList = litClaims.FindControl( scope ) as RockCheckBoxList;
-                if ( checkboxList == null )
-                {
-                    continue;
-                }
-                var selectedScopeClaims = checkboxList.SelectedValues;
-                selectedClaims.AddRange( selectedScopeClaims );
-                if ( selectedScopeClaims.Any() )
-                {
-                    selectedScopes.Add( scope );
-                }
-            }
-
-            authClient.AllowedClaims = selectedClaims.ToJson();
-            authClient.AllowedScopes = selectedScopes.ToJson();
-            rockContext.SaveChanges();
-        }
-
         /// <summary>
         /// Handles the Click event of the lbCancel control.
         /// </summary>
@@ -173,6 +113,10 @@ namespace RockWeb.Blocks.Security.Oidc
         #endregion
 
         #region Internal Methods
+        /// <summary>
+        /// Displays the error message.
+        /// </summary>
+        /// <param name="message">The message.</param>
         private void DisplayErrorMessage( string message )
         {
             nbWarningMessage.Text = message;
@@ -209,7 +153,7 @@ namespace RockWeb.Blocks.Security.Oidc
                     return;
                 }
 
-                authClient = new AuthClient { Id = 0 };
+                authClient = new AuthClient { Id = 0, IsActive = true };
             }
 
             hfRestUserId.Value = authClient.Id.ToString();
@@ -225,6 +169,9 @@ namespace RockWeb.Blocks.Security.Oidc
             lbSave.Visible = editAllowed;
         }
 
+        /// <summary>
+        /// Adds the claims checkboxes.
+        /// </summary>
         private void AddClaimsCheckboxes()
         {
             IEnumerable<ClaimsModel> availableClaims = null;
@@ -262,6 +209,10 @@ namespace RockWeb.Blocks.Security.Oidc
             }
         }
 
+        /// <summary>
+        /// Sets the claims checkbox values.
+        /// </summary>
+        /// <param name="allowedClaims">The allowed claims.</param>
         private void SetClaimsCheckboxValues( IEnumerable<string> allowedClaims )
         {
             if ( allowedClaims == null )
@@ -281,6 +232,11 @@ namespace RockWeb.Blocks.Security.Oidc
             }
         }
 
+        /// <summary>
+        /// Gets the active claims.
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        /// <returns></returns>
         private IEnumerable<ClaimsModel> GetActiveClaims( RockContext rockContext )
         {
             var authClaimService = new AuthClaimService( rockContext );
@@ -300,13 +256,111 @@ namespace RockWeb.Blocks.Security.Oidc
                 .ThenBy( ac => ac.ClaimName );
         }
 
+        /// <summary>
+        /// Saves the authentication client.
+        /// </summary>
+        /// <param name="authScopeId">The authentication scope identifier.</param>
+        private void SaveAuthClient( int authScopeId )
+        {
+            var isNew = authScopeId.Equals( 0 );
+
+            var authClient = new AuthClient();
+
+            var editAllowed = authClient.IsAuthorized( Authorization.EDIT, CurrentPerson );
+            if ( !editAllowed )
+            {
+                DisplayErrorMessage( "The current user is not authorized to make changes." );
+                return;
+            }
+
+            var rockContext = new RockContext();
+            var authClientService = new AuthClientService( rockContext );
+            if ( isNew )
+            {
+                authClientService.Add( authClient );
+            }
+            else
+            {
+                authClient = authClientService.Get( authScopeId );
+            }
+
+            if ( authClient == null )
+            {
+                DisplayErrorMessage( "The Auth Client with the specified Id was found." );
+                return;
+            }
+
+            authClient.Name = tbName.Text;
+            authClient.IsActive = cbActive.Checked;
+            authClient.ClientId = tbClientId.Text;
+
+            authClient.RedirectUri = tbRedirectUri.Text;
+            authClient.PostLogoutRedirectUri = tbPostLogoutRedirectUri.Text;
+
+            if ( tbClientSecret.Text.IsNotNullOrWhiteSpace() )
+            {
+                var entityTypeName = EntityTypeCache.Get<Rock.Security.Authentication.Database>().Name;
+                var databaseAuth = AuthenticationContainer.GetComponent( entityTypeName ) as Rock.Security.Authentication.Database;
+                var encryptedClientSecret = databaseAuth.EncryptString( tbClientSecret.Text );
+                authClient.ClientSecretHash = encryptedClientSecret;
+            }
+
+            var activeClaims = GetActiveClaims( rockContext ).Select( ac => ac.ScopeName ).Distinct();
+            var selectedClaims = new List<string>( activeClaims.Count() );
+            var selectedScopes = new List<string>( activeClaims.Count() );
+            foreach ( var scope in activeClaims )
+            {
+                var checkboxList = litClaims.FindControl( scope ) as RockCheckBoxList;
+                if ( checkboxList == null )
+                {
+                    continue;
+                }
+                var selectedScopeClaims = checkboxList.SelectedValues;
+                selectedClaims.AddRange( selectedScopeClaims );
+                if ( selectedScopeClaims.Any() )
+                {
+                    selectedScopes.Add( scope );
+                }
+            }
+
+            authClient.AllowedClaims = selectedClaims.ToJson();
+            authClient.AllowedScopes = selectedScopes.ToJson();
+            rockContext.SaveChanges();
+        }
         #endregion
 
+        /// <summary>
+        /// Model used to build the claims check box list.
+        /// </summary>
         private class ClaimsModel
         {
+            /// <summary>
+            /// Gets or sets the name of the scope.
+            /// </summary>
+            /// <value>
+            /// The name of the scope.
+            /// </value>
             public string ScopeName { get; set; }
+            /// <summary>
+            /// Gets or sets the name of the scope public.
+            /// </summary>
+            /// <value>
+            /// The name of the scope public.
+            /// </value>
             public string ScopePublicName { get; set; }
+            /// <summary>
+            /// Gets or sets the name of the claim.
+            /// </summary>
+            /// <value>
+            /// The name of the claim.
+            /// </value>
             public string ClaimName { get; set; }
+            /// <summary>
+            /// Gets or sets the name of the claim public.
+            /// </summary>
+            /// <value>
+            /// The name of the claim public.
+            /// </value>
             public string ClaimPublicName { get; set; }
         }
     }

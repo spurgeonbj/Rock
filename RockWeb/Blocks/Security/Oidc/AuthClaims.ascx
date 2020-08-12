@@ -6,6 +6,7 @@
             <Rock:ModalAlert ID="maGridWarning" runat="server" />
             <Rock:ModalDialog ID="dlgClaimDetails" runat="server" Title="Claim Detail">
                 <Content>
+                    <Rock:NotificationBox ID="nbEditModeMessage" runat="server" NotificationBoxType="Info" />
                     <asp:ValidationSummary ID="valSummary" runat="server" HeaderText="Please correct the following:" CssClass="alert alert-validation" />
                     <asp:HiddenField ID="hfAuthClaimId" runat="server" />
                     <div class="row">
@@ -13,13 +14,8 @@
                             <Rock:RockTextBox ID="tbClaimName" Required="true" Label="Name" runat="server" MaxLength="50" CssClass="form-group" />
                             <asp:RegularExpressionValidator ID="regValidator" ControlToValidate="tbClaimName" runat="server" ValidationExpression="^[a-zA-Z0-9_]*$" Display="None" ErrorMessage="Only alphanumeric and underscore characters can be used." />
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-xs-3">
-                            <Rock:RockCheckBox ID="cbClaimActive" runat="server" Checked="true" Text="Active" />
-                        </div>
-                        <div class="col-xs-3">
-                            <Rock:RockCheckBox ID="cbClaimIsSystem" runat="server" Checked="false" Enabled="false" Text="System" />
+                        <div class="col-sm-6">
+                            <Rock:RockCheckBox ID="cbClaimActive" runat="server" Checked="true" Label="Active" />
                         </div>
                     </div>
                     <div class="row">
@@ -34,7 +30,7 @@
             </Rock:ModalDialog>
 
             <div class="panel-heading">
-                <h1 class="panel-title"><i class="fa fa-openid"></i>Open Id Connect Scopes</h1>
+                <h1 class="panel-title"><i class="fa fa-openid"></i>OpenID Connect Scopes</h1>
             </div>
             <div class="panel-body">
                 <Rock:NotificationBox ID="nbWarningMessage" runat="server" NotificationBoxType="Warning" />

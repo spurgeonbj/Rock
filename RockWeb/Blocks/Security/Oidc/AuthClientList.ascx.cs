@@ -35,19 +35,31 @@ namespace RockWeb.Blocks.Security.Oidc
     /// <summary>
     /// Block for displaying logins.  By default displays all logins, but can be configured to use person context to display logins for a specific person.
     /// </summary>
-    [DisplayName( "Open Id Connect Clients" )]
+    [DisplayName( "OpenID Connect Clients" )]
     [Category( "Security > OIDC" )]
-    [Description( "Block for displaying and editing available Opend Id Connect clients." )]
+    [Description( "Block for displaying and editing available OpenID Connect clients." )]
     [LinkedPage( "Detail Page", Key = AttributeKey.DetailPage )]
+    [LinkedPage( "OpenID Connect Scopes Page", Key = AttributeKey.ScopePage )]
     public partial class AuthClientList : RockBlock, ICustomGridColumns
     {
         public class AttributeKey
         {
+            /// <summary>
+            /// The detail page
+            /// </summary>
             public const string DetailPage = "DetailPage";
+
+            /// <summary>
+            /// The scope page
+            /// </summary>
+            public const string ScopePage = "ScopePage";
         }
 
         public class PageParameterKey
         {
+            /// <summary>
+            /// The authentication client identifier
+            /// </summary>
             public const string AuthClientId = "AuthClientId";
         }
 
@@ -101,13 +113,6 @@ namespace RockWeb.Blocks.Security.Oidc
         private void gAuthClients_AddClick( object sender, EventArgs e )
         {
             NavigateToAuthScopeDetailPage( 0 );
-        }
-
-        private void NavigateToAuthScopeDetailPage( int authClaimId )
-        {
-            var parms = new Dictionary<string, string>();
-            parms.Add( PageParameterKey.AuthClientId, authClaimId.ToString() );
-            NavigateToLinkedPage( AttributeKey.DetailPage, parms );
         }
 
         /// <summary>
@@ -176,6 +181,11 @@ namespace RockWeb.Blocks.Security.Oidc
         {
         }
 
+        /// <summary>
+        /// Handles the RowDataBound event of the gAuthClients control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="GridViewRowEventArgs"/> instance containing the event data.</param>
         protected void gAuthClients_RowDataBound( object sender, GridViewRowEventArgs e )
         {
             var authClaim = e.Row.DataItem as AuthClaim;
@@ -198,6 +208,26 @@ namespace RockWeb.Blocks.Security.Oidc
             }
 
             deleteButton.Visible = !authClaim.IsSystem;
+        }
+
+        /// <summary>
+        /// Handles the RowSelected event of the gAuthClients control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RowEventArgs"/> instance containing the event data.</param>
+        protected void gAuthClients_RowSelected( object sender, RowEventArgs e )
+        {
+            NavigateToAuthScopeDetailPage( e.RowKeyId );
+        }
+
+        /// <summary>
+        /// Handles the Click event of the btnOpenIdScopes control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void btnOpenIdScopes_Click( object sender, EventArgs e )
+        {
+            NavigateToLinkedPage( AttributeKey.ScopePage, null );
         }
         #endregion
 
@@ -257,11 +287,16 @@ namespace RockWeb.Blocks.Security.Oidc
             gAuthClients.DataBind();
         }
 
-        #endregion
-
-        protected void gAuthClients_RowSelected( object sender, RowEventArgs e )
+        /// <summary>
+        /// Navigates to authentication scope detail page.
+        /// </summary>
+        /// <param name="authClaimId">The authentication claim identifier.</param>
+        private void NavigateToAuthScopeDetailPage( int authClaimId )
         {
-            NavigateToAuthScopeDetailPage( e.RowKeyId );
+            var parms = new Dictionary<string, string>();
+            parms.Add( PageParameterKey.AuthClientId, authClaimId.ToString() );
+            NavigateToLinkedPage( AttributeKey.DetailPage, parms );
         }
+        #endregion
     }
 }

@@ -10,24 +10,20 @@
             <div class="panel-body">
                 <Rock:NotificationBox ID="nbWarningMessage" runat="server" NotificationBoxType="Warning" />
                 <div id="pnlEditDetails" runat="server">
+                    <Rock:NotificationBox ID="nbEditModeMessage" runat="server" NotificationBoxType="Info" />
                     <asp:ValidationSummary ID="valSummary" runat="server" HeaderText="Please correct the following:" CssClass="alert alert-validation" />
                     <asp:HiddenField ID="hfRestUserId" runat="server" />
                     <div class="row">
-                        <div class="col-md-12">
+                        <div class="col-md-6">
                             <Rock:RockTextBox ID="tbName" Required="true" Label="Name" runat="server" MaxLength="50" CssClass="form-group" />
                             <asp:RegularExpressionValidator ID="regValidator" ControlToValidate="tbName" runat="server" ValidationExpression="^[a-zA-Z0-9_]*$" Display="None" ErrorMessage="Only alphanumeric and underscore characters can be used." />
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-3">
-                            <Rock:RockCheckBox ID="cbActive" runat="server" Checked="true" Text="Active" />
-                        </div>
-                        <div class="col-sm-3">
-                            <Rock:RockCheckBox ID="cbIsSystem" runat="server" Checked="false" Enabled="false" Text="System" />
+                        <div class="col-sm-6">
+                            <Rock:RockCheckBox ID="cbActive" runat="server" Checked="true" Label="Active" />
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-12">
+                        <div class="col-md-6">
                             <Rock:RockTextBox ID="tbPublicName" Label="Public Name" MaxLength="100" runat="server" CssClass="form-group" />
                         </div>
                     </div>
