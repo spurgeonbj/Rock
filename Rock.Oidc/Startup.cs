@@ -51,19 +51,16 @@ namespace Rock.Oidc
 
             // Insert a new cookies middleware in the pipeline to store the user
             // identity after he has been redirected from the identity provider.
-            app.UseCookieAuthentication( new CookieAuthenticationOptions
-            {
-                AuthenticationMode = AuthenticationMode.Active,
-                AuthenticationType = "ClientCookie",
-                CookieName = CookieAuthenticationDefaults.CookiePrefix + "ClientCookie",
-                ExpireTimeSpan = TimeSpan.FromMinutes( 5 )
-            } );
+            //app.UseCookieAuthentication( new CookieAuthenticationOptions
+            //{
+            //    AuthenticationMode = AuthenticationMode.Active,
+            //    AuthenticationType = "ClientCookie",
+            //    CookieName = CookieAuthenticationDefaults.CookiePrefix + "ClientCookie",
+            //    ExpireTimeSpan = TimeSpan.FromMinutes( 5 )
+            //} );
 
             // Insert a new OIDC client middleware in the pipeline.
             
-
-            app.SetDefaultSignInAsAuthenticationType( "ClientCookie" );
-
             app.UseOpenIdConnectServer( options =>
             {
                 options.Provider = new AuthorizationProvider();
@@ -186,6 +183,8 @@ namespace Rock.Oidc
                     }
                 }
             } );
+
+            app.SetDefaultSignInAsAuthenticationType( "OpenIdConnectClient" );
         }
     }
 }
