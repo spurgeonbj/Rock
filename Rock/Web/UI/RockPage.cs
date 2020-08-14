@@ -38,7 +38,7 @@ using Rock.Transactions;
 using Rock.Utility;
 using Rock.Web.Cache;
 using Rock.Web.UI.Controls;
-
+using static Rock.Security.Authorization;
 using Page = System.Web.UI.Page;
 
 namespace Rock.Web.UI
@@ -2404,6 +2404,84 @@ Sys.Application.add_load(function () {
         public string GetContextCookieName( bool pageSpecific )
         {
             return "Rock_Context" + ( pageSpecific ? ( ":" + PageId.ToString() ) : "" );
+        }
+
+        /// <summary>
+        /// Creates/Overwrites the specified cookie using the global default for the SameSite setting.
+        /// </summary>
+        /// <param name="request">The request.</param>
+        /// <param name="response">The response.</param>
+        /// <param name="name">The name.</param>
+        /// <param name="value">The value.</param>
+        /// <param name="expirationDate">The expiration date.</param>
+        public static void CreateCookie( HttpRequest request, HttpResponse response, string name, string value, DateTime? expirationDate )
+        {
+            var httpRequestBase = new HttpRequestWrapper(request);
+            var httpResponseBase = new HttpResponseWrapper(response);
+
+            CreateCookie( httpRequestBase, httpResponseBase, name, value, expirationDate );
+        }
+
+        /// <summary>
+        /// Creates/Overwrites the specified cookie using the global default for the SameSite setting.
+        /// </summary>
+        /// <param name="request">The request.</param>
+        /// <param name="response">The response.</param>
+        /// <param name="cookie">The cookie.</param>
+        public static void CreateCookie( HttpRequest request, HttpResponse response, HttpCookie cookie )
+        {
+            var httpRequestBase = new HttpRequestWrapper(request);
+            var httpResponseBase = new HttpResponseWrapper(response);
+
+            CreateCookie( httpRequestBase, httpResponseBase, cookie );
+        }
+
+        /// <summary>
+        /// Creates/Overwrites the specified cookie using the global default for the SameSite setting.
+        /// </summary>
+        /// <param name="request">The request.</param>
+        /// <param name="response">The response.</param>
+        /// <param name="name">The name.</param>
+        /// <param name="value">The value.</param>
+        /// <param name="expirationDate">The expiration date. If this is null then 1 year from the current date/time is used.</param>
+        public static void CreateCookie( HttpRequestBase request, HttpResponseBase response, string name, string value, DateTime? expirationDate )
+        {
+            var cookie = new HttpCookie( name );
+            cookie.Expires = expirationDate ?? RockDateTime.Now.AddYears( 1 );
+            cookie.Value = value;
+
+            CreateCookie( request, response, cookie );
+        }
+
+        /// <summary>
+        /// Creates/Overwrites the specified cookie using the global default for the SameSite setting.
+        /// </summary>
+        /// <param name="request">The request.</param>
+        /// <param name="response">The response.</param>
+        /// <param name="cookie">The cookie.</param>
+        public static void CreateCookie( HttpRequestBase request, HttpResponseBase response, HttpCookie cookie )
+        {
+            // If the samesite setting is not in the Path then add it
+            if ( cookie.Path.IsNullOrWhiteSpace() || !cookie.Path.Contains( "SameSite" ) )
+            {
+                SameSiteCookieSetting sameSiteCookieSetting = GlobalAttributesCache.Get().GetValue( "core_SameSiteCookieSetting" ).ConvertToEnumOrNull<SameSiteCookieSetting>() ?? SameSiteCookieSetting.Lax;
+                string sameSiteCookieValue = ";SameSite=" + sameSiteCookieSetting;
+                cookie.Path += sameSiteCookieValue;
+            }
+
+            request.Cookies.Remove( cookie.Name );
+            response.Cookies.Remove( cookie.Name );
+            response.Cookies.Add( cookie );
+        }
+
+        /// <summary>
+        /// Gets the specified cookie. If the cookie is not found in the Request then it checks the Response, otherwise it will return null.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <returns></returns>
+        public HttpCookie GetCookie( string name )
+        {
+            return Request.Cookies[name] ?? Response.Cookies[name] ?? null;
         }
 
         /// <summary>

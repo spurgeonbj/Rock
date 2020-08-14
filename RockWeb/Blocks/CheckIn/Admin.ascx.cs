@@ -503,7 +503,8 @@ tryGeoLocation();
             if ( LocalDeviceConfig.CurrentTheme != theme )
             {
                 LocalDeviceConfig.CurrentTheme = ddlTheme.SelectedValue;
-                LocalDeviceConfig.SaveToCookie( this.Page );
+                var localDeviceConfigValue = this.LocalDeviceConfig.ToJson( Newtonsoft.Json.Formatting.None );
+                Rock.Web.UI.RockPage.CreateCookie( this.RockPage.Request, this.RockPage.Response, CheckInCookieKey.LocalDeviceConfig, localDeviceConfigValue, RockDateTime.Now.AddYears( 1 ) );
             }
 
             if ( !RockPage.Site.Theme.Equals( LocalDeviceConfig.CurrentTheme, StringComparison.OrdinalIgnoreCase ) )
@@ -572,8 +573,6 @@ tryGeoLocation();
             LocalDeviceConfig.CurrentKioskId = ddlKiosk.SelectedValueAsInt();
             LocalDeviceConfig.CurrentCheckinTypeId = ddlCheckinType.SelectedValueAsInt();
             LocalDeviceConfig.CurrentGroupTypeIds = groupTypeIds;
-
-            LocalDeviceConfig.SaveToCookie( this.Page );
 
             CurrentCheckInState = null;
             CurrentWorkflow = null;
