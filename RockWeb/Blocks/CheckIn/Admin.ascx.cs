@@ -424,8 +424,8 @@ tryGeoLocation();
             double timeCacheMinutes = GetAttributeValue( AttributeKey.TimetoCacheKioskGeoLocation ).AsDouble();
             DateTime cookieExpirationDate = ( timeCacheMinutes == 0 ) ? DateTime.MaxValue : RockDateTime.Now.AddMinutes( timeCacheMinutes );
 
-            this.RockPage.CreateCookie( CheckInCookieKey.DeviceId, kiosk.Id.ToString(), cookieExpirationDate );
-            this.RockPage.CreateCookie( CheckInCookieKey.IsMobile, "true", cookieExpirationDate );
+            Rock.Web.UI.RockPage.CreateCookie( CheckInCookieKey.DeviceId, kiosk.Id.ToString(), cookieExpirationDate );
+            Rock.Web.UI.RockPage.CreateCookie( CheckInCookieKey.IsMobile, "true", cookieExpirationDate );
         }
 
         /// <summary>
@@ -433,7 +433,7 @@ tryGeoLocation();
         /// </summary>
         private void ClearMobileCookie()
         {
-            this.RockPage.CreateCookie( CheckInCookieKey.IsMobile, "true", RockDateTime.Now.AddDays( -1d ) );
+            Rock.Web.UI.RockPage.CreateCookie( CheckInCookieKey.IsMobile, "true", RockDateTime.Now.AddDays( -1d ) );
         }
 
         /// <summary>
@@ -494,7 +494,7 @@ tryGeoLocation();
             {
                 LocalDeviceConfig.CurrentTheme = ddlTheme.SelectedValue;
                 var localDeviceConfigValue = this.LocalDeviceConfig.ToJson( Newtonsoft.Json.Formatting.None );
-                this.RockPage.CreateCookie( CheckInCookieKey.LocalDeviceConfig, localDeviceConfigValue, RockDateTime.Now.AddYears( 1 ) );
+                Rock.Web.UI.RockPage.CreateCookie( CheckInCookieKey.LocalDeviceConfig, localDeviceConfigValue, RockDateTime.Now.AddYears( 1 ) );
             }
 
             if ( !RockPage.Site.Theme.Equals( LocalDeviceConfig.CurrentTheme, StringComparison.OrdinalIgnoreCase ) )

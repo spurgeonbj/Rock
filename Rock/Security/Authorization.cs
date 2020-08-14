@@ -790,7 +790,7 @@ namespace Rock.Security
                 authCookie.Expires = ticket.Expiration;
             }
 
-            RockPage.CreateCookie( HttpContext.Current.Request, HttpContext.Current.Response, authCookie );
+            RockPage.CreateCookie( authCookie );
 
             // If cookie is for a more generic domain, we need to store that domain so that we can expire it correctly 
             // when the user signs out.
@@ -809,7 +809,7 @@ namespace Rock.Security
                     Expires = authCookie.Expires
                 };
 
-            RockPage.CreateCookie( HttpContext.Current.Request, HttpContext.Current.Response, domainCookie );
+            RockPage.CreateCookie( domainCookie );
         }
 
         /// <summary>
@@ -851,7 +851,7 @@ namespace Rock.Security
         {
             if ( HttpContext.Current.Request.Cookies.AllKeys.Contains( Rock.Security.Authorization.COOKIE_UNSECURED_PERSON_IDENTIFIER ) )
             {
-                RockPage.CreateCookie( HttpContext.Current.Request, HttpContext.Current.Response, Rock.Security.Authorization.COOKIE_UNSECURED_PERSON_IDENTIFIER, null, RockDateTime.Now.AddDays( -1d ) );
+                RockPage.CreateCookie( Rock.Security.Authorization.COOKIE_UNSECURED_PERSON_IDENTIFIER, null, RockDateTime.Now.AddDays( -1d ) );
             }
         }
 
