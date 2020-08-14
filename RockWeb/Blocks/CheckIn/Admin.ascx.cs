@@ -422,18 +422,10 @@ tryGeoLocation();
         {
             // set an expiration cookie for these coordinates.
             double timeCacheMinutes = GetAttributeValue( AttributeKey.TimetoCacheKioskGeoLocation ).AsDouble();
+            DateTime cookieExpirationDate = ( timeCacheMinutes == 0 ) ? DateTime.MaxValue : RockDateTime.Now.AddMinutes( timeCacheMinutes );
 
-            HttpCookie deviceCookie = Request.Cookies[CheckInCookieKey.DeviceId];
-            if ( deviceCookie == null )
-            {
-                deviceCookie = new HttpCookie( CheckInCookieKey.DeviceId, kiosk.Id.ToString() );
-            }
-
-            deviceCookie.Expires = ( timeCacheMinutes == 0 ) ? DateTime.MaxValue : RockDateTime.Now.AddMinutes( timeCacheMinutes );
-            Response.Cookies.Set( deviceCookie );
-
-            HttpCookie isMobileCookie = new HttpCookie( CheckInCookieKey.IsMobile, "true" );
-            Response.Cookies.Set( isMobileCookie );
+            this.RockPage.CreateCookie( CheckInCookieKey.DeviceId, kiosk.Id.ToString(), cookieExpirationDate );
+            this.RockPage.CreateCookie( CheckInCookieKey.IsMobile, "true", cookieExpirationDate );
         }
 
         /// <summary>
@@ -441,9 +433,7 @@ tryGeoLocation();
         /// </summary>
         private void ClearMobileCookie()
         {
-            HttpCookie isMobileCookie = new HttpCookie( CheckInCookieKey.IsMobile );
-            isMobileCookie.Expires = RockDateTime.Now.AddDays( -1d );
-            Response.Cookies.Set( isMobileCookie );
+            this.RockPage.CreateCookie( CheckInCookieKey.IsMobile, "true", RockDateTime.Now.AddDays( -1d ) );
         }
 
         /// <summary>
@@ -504,7 +494,7 @@ tryGeoLocation();
             {
                 LocalDeviceConfig.CurrentTheme = ddlTheme.SelectedValue;
                 var localDeviceConfigValue = this.LocalDeviceConfig.ToJson( Newtonsoft.Json.Formatting.None );
-                Rock.Web.UI.RockPage.CreateCookie( this.RockPage.Request, this.RockPage.Response, CheckInCookieKey.LocalDeviceConfig, localDeviceConfigValue, RockDateTime.Now.AddYears( 1 ) );
+                this.RockPage.CreateCookie( CheckInCookieKey.LocalDeviceConfig, localDeviceConfigValue, RockDateTime.Now.AddYears( 1 ) );
             }
 
             if ( !RockPage.Site.Theme.Equals( LocalDeviceConfig.CurrentTheme, StringComparison.OrdinalIgnoreCase ) )
