@@ -2407,6 +2407,17 @@ Sys.Application.add_load(function () {
         }
 
         /// <summary>
+        /// Creates the cookie.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <param name="value">The value.</param>
+        /// <param name="expirationDate">The expiration date.</param>
+        public void CreateCookie( string name, string value, DateTime? expirationDate )
+        {
+            CreateCookie( this.Request, this.Response, name, value, expirationDate );
+        }
+
+        /// <summary>
         /// Creates/Overwrites the specified cookie using the global default for the SameSite setting.
         /// </summary>
         /// <param name="request">The request.</param>
