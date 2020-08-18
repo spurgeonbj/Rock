@@ -565,6 +565,7 @@
     <Compile Include="Plugin\HotFixes\131_MigrationRollupsFor11_1_1.cs" />
     <Compile Include="Plugin\HotFixes\130_ServerCheckinPrinterCutter.cs" />
     <Compile Include="Plugin\HotFixes\129_MigrationRollupsFor11_1_0.cs" />
+    <Compile Include="Security\Authentication\OidcClient.cs" />
     <Compile Include="SystemGuid\AuthScope.cs" />
     <Compile Include="SystemKey\DeviceAttributeKey.cs" />
     <Compile Include="Transactions\AchievementsProcessTransaction.cs" />
