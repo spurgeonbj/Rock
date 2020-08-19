@@ -744,7 +744,6 @@ th[align="right"] {
 .btn-authentication {
   width: 100%;
   margin-bottom: 8px;
-
   .button-variant(@btn-default-color; @btn-default-bg; @btn-default-border);
 
   &:hover {
@@ -786,8 +785,19 @@ th[align="right"] {
       content: @fa-var-twitter;
     }
   }
-}
 
+  &.oidcclient {
+    color: #fff;
+    background-color: #f78c40;
+
+    &::before {
+      margin-right: 12px;
+      font-family: "@{fa-font-face} Brands";
+      font-weight: 400;
+      content: @fa-var-oidcclient;
+    }
+  }
+}
 
 .btn-minimal {
   padding: 0;

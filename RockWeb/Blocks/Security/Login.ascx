@@ -59,4 +59,4 @@
 </asp:UpdatePanel>
 
 
-<asp:Button ID="btnOpenIdLogin" runat="server" Text="OIDC Login" CssClass="btn btn-primary" OnClick="btnOpenIdLogin_Click" />
+<%--<asp:Button ID="btnOpenIdLogin" runat="server" Text="OIDC Login" CssClass="btn btn-primary" OnClick="btnOpenIdLogin_Click" />--%>

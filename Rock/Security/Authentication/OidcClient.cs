@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Linq;
+using System.Net.Http;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using System.Web.Security;
+using Newtonsoft.Json.Linq;
 using Rock.Attribute;
 using Rock.Model;
 
@@ -22,7 +25,7 @@ namespace Rock.Security.ExternalAuthentication
     [TextField( "App ID",
         Description = "The OIDC Client App ID",
         Key = AttributeKey.ApplicationId,
-        Order = 1)]
+        Order = 1 )]
     [TextField( "App Secret",
         Description = "The OIDC Client Secret",
         Key = AttributeKey.ApplicationSecret,
@@ -79,7 +82,7 @@ namespace Rock.Security.ExternalAuthentication
             /// The post logout redirect URI
             /// </summary>
             public const string PostLogoutRedirectUri = "PostLogoutRedirectUri";
-            
+
         }
         /// <summary>
         /// Gets the type of the service.
@@ -139,11 +142,9 @@ namespace Rock.Security.ExternalAuthentication
         {
             string returnUrl = request.QueryString["returnurl"];
             string redirectUri = GetRedirectUrl( request );
-            
-            return new Uri( string.Format( "https://www.facebook.com/dialog/oauth?client_id={0}&redirect_uri={1}&state={2}&scope=public_profile,email" + scopeUserFriends,
-                GetAttributeValue( "AppID" ),
-                HttpUtility.UrlEncode( redirectUri ),
-                HttpUtility.UrlEncode( returnUrl ?? FormsAuthentication.DefaultUrl ) ) );
+
+            // TODO: add requested scopes
+            return new Uri( $"{GetLoginUrl()}?client_id={GetAttributeValue( AttributeKey.ApplicationId )}&redirect_uri={HttpUtility.UrlEncode( redirectUri )}&state={HttpUtility.UrlEncode( returnUrl ?? FormsAuthentication.DefaultUrl )}&scope=profile,email");
         }
 
         public override string ImageUrl()
@@ -179,6 +180,34 @@ namespace Rock.Security.ExternalAuthentication
         {
             Uri uri = new Uri( request.Url.ToString() );
             return uri.Scheme + "://" + uri.GetComponents( UriComponents.HostAndPort, UriFormat.UriEscaped ) + uri.LocalPath;
+        }
+
+        private string GetLoginUrl()
+        {
+            var authServer = GetAttributeValue( AttributeKey.AuthenticationServer ).EnsureTrailingForwardslash();
+
+            // TODO: Cache config so we don't have to make multiple calls.
+            var request = new HttpRequestMessage( HttpMethod.Get, $"{authServer}.well-known/openid-configuration" );
+            JObject payload = null;
+            using ( var client = new HttpClient() )
+            {
+                var response = client.SendAsync( request ).GetAwaiter().GetResult();
+                response.EnsureSuccessStatusCode();
+                payload = JObject.Parse( response.Content.ReadAsStringAsync().GetAwaiter().GetResult() );
+            }
+
+            if ( payload == null )
+            {
+                return string.Empty;
+            }
+
+            var issuer = payload.Value<string>( "issuer" );
+            if ( !string.Equals( issuer.EnsureTrailingForwardslash(), authServer, StringComparison.InvariantCultureIgnoreCase ) )
+            {
+                return string.Empty;
+            }
+
+            return payload.Value<string>( "authorization_endpoint" );
         }
     }
 }
