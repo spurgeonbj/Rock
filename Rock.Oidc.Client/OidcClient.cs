@@ -1,8 +1,26 @@
-﻿using System;
+﻿// <copyright>
+// Copyright by the Spark Development Network
+//
+// Licensed under the Rock Community License (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.rockrms.com/license
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// </copyright>
+
+using System;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.IdentityModel.Tokens.Jwt;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Web;
 using IdentityModel;
 using IdentityModel.Client;
@@ -10,31 +28,15 @@ using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Linq;
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
+using Rock.Oidc.Client;
 using Rock.Web.Cache;
 
 namespace Rock.Security.ExternalAuthentication
 {
-    public static class ClaimExtensionMethods
-    {
-        public static string GetClaimValue( this JwtSecurityToken idToken, string claim )
-        {
-            if ( idToken == null )
-            {
-                return string.Empty;
-            }
-
-            if ( claim.IsNullOrWhiteSpace() )
-            {
-                return string.Empty;
-            }
-
-            return idToken.Claims.Where( c => c.Type == claim ).Select( c => c.Value ).FirstOrDefault();
-        }
-    }
-
     /// <summary>
     /// Authenticates a user using the specified OIDC Client.
     /// </summary>
@@ -62,15 +64,13 @@ namespace Rock.Security.ExternalAuthentication
         Description = "The URI that the authentication server should redirect to once the user has been logged out.",
         Key = AttributeKey.PostLogoutRedirectUri,
         Order = 5 )]
-    // TODO: Figure out how to handle requested claims.
-    //[EnumsField(
-    //    "Requested Claims",
-    //    Description = "The Claims you wish to request from the server.",
-    //    EnumSourceType = typeof( ContentChannelItemStatus ),
-    //    IsRequired = false,
-    //    DefaultValue = "2",
-    //    Category = "CustomSetting",
-    //    Key = AttributeKey.Status )]
+    [CustomCheckboxListField(
+        "Request Scopes",
+        Description = "The scopes you would like to request for the authentication server.",
+        ListSource = "email^Email,profile^Profile,phone^Phone,address^Address",
+        IsRequired = false,
+        Key = AttributeKey.RequestedScopes,
+        Order = 6 )]
     public class OidcClient : AuthenticationComponent
     {
         /// <summary>
@@ -82,28 +82,75 @@ namespace Rock.Security.ExternalAuthentication
             /// The application identifier
             /// </summary>
             public const string ApplicationId = "AppId";
+
             /// <summary>
             /// The application secret
             /// </summary>
             public const string ApplicationSecret = "AppSecret";
+
             /// <summary>
             /// The authentication server
             /// </summary>
             public const string AuthenticationServer = "AuthServer";
+
             /// <summary>
             /// The requested claims
             /// </summary>
-            public const string RequestedClaims = "RequestedClaims";
+            public const string RequestedScopes = "RequestedScopes";
+
             /// <summary>
             /// The redirect URI
             /// </summary>
             public const string RedirectUri = "RedirectUri";
+
             /// <summary>
             /// The post logout redirect URI
             /// </summary>
             public const string PostLogoutRedirectUri = "PostLogoutRedirectUri";
-
         }
+
+        /// <summary>
+        /// Session Keys
+        /// </summary>
+        public static class SessionKey
+        {
+            /// <summary>
+            /// The return URL
+            /// </summary>
+            public const string ReturnUrl = "oidc-returnurl";
+
+            /// <summary>
+            /// The state
+            /// </summary>
+            public const string State = "oidc-state";
+
+            /// <summary>
+            /// The nonce
+            /// </summary>
+            public const string Nonce = "oidc-nonce";
+        }
+
+        /// <summary>
+        /// Page Parameter Keys
+        /// </summary>
+        public static class PageParameterKey
+        {
+            /// <summary>
+            /// The return URL
+            /// </summary>
+            public const string ReturnUrl = "returnurl";
+
+            /// <summary>
+            /// The code
+            /// </summary>
+            public const string Code = "code";
+
+            /// <summary>
+            /// The state
+            /// </summary>
+            public const string State = "state";
+        }
+
         /// <summary>
         /// Gets the type of the service.
         /// </summary>
@@ -129,19 +176,42 @@ namespace Rock.Security.ExternalAuthentication
         /// </value>
         public override bool SupportsChangePassword => false;
 
+        /// <summary>
+        /// Authenticates the user based on user name and password
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <param name="password">The password.</param>
+        /// <returns></returns>
+        /// <exception cref="System.NotImplementedException"></exception>
         public override bool Authenticate( UserLogin user, string password )
         {
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Authenticates the user based on a request from a third-party provider.  Will set the username and returnUrl values.
+        /// </summary>
+        /// <param name="request">The request.</param>
+        /// <param name="userName">Name of the user.</param>
+        /// <param name="returnUrl">The return URL.</param>
+        /// <returns></returns>
+        /// <exception cref="System.Exception">
+        /// State is invalid.
+        /// or
+        /// </exception>
         public override bool Authenticate( HttpRequest request, out string userName, out string returnUrl )
         {
             userName = string.Empty;
-            returnUrl = HttpContext.Current.Session["oidc-url"].ToString();
+            returnUrl = HttpContext.Current.Session[SessionKey.ReturnUrl].ToStringSafe();
             string redirectUri = GetRedirectUrl( request );
-            var code = request.QueryString["code"];
+            var code = request.QueryString[PageParameterKey.Code];
+            var state = request.QueryString[PageParameterKey.State];
+            var validState = HttpContext.Current.Session[SessionKey.State].ToStringSafe();
 
-            var state = request.QueryString["state"];
+            if ( validState.IsNullOrWhiteSpace() || !state.Equals( validState ) )
+            {
+                throw new Exception( "State is invalid." );
+            }
 
             try
             {
@@ -153,12 +223,13 @@ namespace Rock.Security.ExternalAuthentication
                     throw new Exception( response.Error );
                 }
 
-                var nonce = HttpContext.Current.Session["oidc-nonce"].ToString();
+                var nonce = HttpContext.Current.Session[SessionKey.Nonce].ToStringSafe();
                 var idToken = GetValidatedIdToken( response.IdentityToken, nonce );
                 userName = HandleOidcUserAddUpdate( idToken, response.AccessToken );
 
-                HttpContext.Current.Session["oidc-nonce"] = string.Empty;
-                HttpContext.Current.Session["oidc-url"] = string.Empty;
+                HttpContext.Current.Session[SessionKey.Nonce] = string.Empty;
+                HttpContext.Current.Session[SessionKey.ReturnUrl] = string.Empty;
+                HttpContext.Current.Session[SessionKey.State] = string.Empty;
             }
 
             catch ( Exception ex )
@@ -183,30 +254,45 @@ namespace Rock.Security.ExternalAuthentication
             return false;
         }
 
+        /// <summary>
+        /// Encodes the password.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <param name="password">The password.</param>
+        /// <returns></returns>
+        /// <exception cref="System.NotImplementedException"></exception>
         public override string EncodePassword( UserLogin user, string password )
         {
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Generates the login URL.
+        /// </summary>
+        /// <param name="request">The request.</param>
+        /// <returns></returns>
         public override Uri GenerateLoginUrl( HttpRequest request )
         {
-            string returnUrl = request.QueryString["returnurl"];
+            string returnUrl = request.QueryString[PageParameterKey.ReturnUrl];
             string redirectUri = GetRedirectUrl( request );
 
             var nonce = EncodeBcrypt( System.Guid.NewGuid().ToString() );
             var state = EncodeBcrypt( System.Guid.NewGuid().ToString() );
 
-            HttpContext.Current.Session["oidc-nonce"] = nonce;
-            HttpContext.Current.Session["oidc-state"] = state;
-            HttpContext.Current.Session["oidc-url"] = returnUrl;
+            HttpContext.Current.Session[SessionKey.Nonce] = nonce;
+            HttpContext.Current.Session[SessionKey.State] = state;
+            HttpContext.Current.Session[SessionKey.ReturnUrl] = returnUrl;
 
-            // TODO: add requested scopes
             return new Uri( GetLoginUrl( GetRedirectUrl( request ), nonce, state ) );
         }
 
+        /// <summary>
+        /// Gets the URL of an image that should be displayed.
+        /// </summary>
+        /// <returns></returns>
         public override string ImageUrl()
         {
-            return ""; /*~/Assets/Images/facebook-login.png*/
+            return string.Empty;
         }
 
         /// <summary>
@@ -217,8 +303,8 @@ namespace Rock.Security.ExternalAuthentication
         /// <returns></returns>
         public override bool IsReturningFromAuthentication( HttpRequest request )
         {
-            // TODO: Add xrf validation
-            return !String.IsNullOrWhiteSpace( request.QueryString["code"] ) && !String.IsNullOrWhiteSpace( request.QueryString["state"] );
+            return !String.IsNullOrWhiteSpace( request.QueryString[PageParameterKey.Code] )
+                    && !String.IsNullOrWhiteSpace( request.QueryString[PageParameterKey.State] );
         }
 
         /// <summary>
@@ -232,13 +318,9 @@ namespace Rock.Security.ExternalAuthentication
             throw new NotImplementedException();
         }
 
-        // TODO: this is copied and pasted from facebook should probably standardize.
         private string GetRedirectUrl( HttpRequest request )
         {
             return GetAttributeValue( AttributeKey.RedirectUri );
-
-            //Uri uri = new Uri( request.Url.ToString() );
-            //return uri.Scheme + "://" + uri.GetComponents( UriComponents.HostAndPort, UriFormat.UriEscaped ) + uri.LocalPath;
         }
 
         private string GetLoginUrl( string redirectUrl, string nonce, string state )
@@ -249,7 +331,7 @@ namespace Rock.Security.ExternalAuthentication
 
             return requestUrl.CreateAuthorizeUrl( GetAttributeValue( AttributeKey.ApplicationId ),
                 OidcConstants.ResponseTypes.Code,
-                "openid email profile",
+                GetScopes(),
                 $"{redirectUrl}",
                 state,
                 nonce );
@@ -259,6 +341,16 @@ namespace Rock.Security.ExternalAuthentication
         {
             var config = GetOpenIdConnectConfiguration();
             return config.TokenEndpoint;
+        }
+
+        private string GetScopes()
+        {
+            var scopes = GetAttributeValue( AttributeKey.RequestedScopes );
+            if ( scopes.IsNullOrWhiteSpace() )
+            {
+                return "openid";
+            }
+            return $"openid {scopes.Replace( ",", " " )}";
         }
 
         private JwtSecurityToken GetValidatedIdToken( string idToken, string masterNonce )
@@ -293,7 +385,7 @@ namespace Rock.Security.ExternalAuthentication
         private OpenIdConnectConfiguration GetOpenIdConnectConfiguration()
         {
             var authServer = GetAttributeValue( AttributeKey.AuthenticationServer ).EnsureTrailingForwardslash();
-            string stsDiscoveryEndpoint = $"{authServer}.well-known/openid-configuration";
+            string stsDiscoveryEndpoint = $"{authServer}{OidcConstants.Discovery.DiscoveryEndpoint}";
 
             ConfigurationManager<OpenIdConnectConfiguration> configManager =
                  new ConfigurationManager<OpenIdConnectConfiguration>( stsDiscoveryEndpoint, new OpenIdConnectConfigurationRetriever() );
@@ -301,7 +393,7 @@ namespace Rock.Security.ExternalAuthentication
             return configManager.GetConfigurationAsync().Result;
         }
 
-        public static string HandleOidcUserAddUpdate( JwtSecurityToken idToken, string accessToken = "" )
+        private string HandleOidcUserAddUpdate( JwtSecurityToken idToken, string accessToken = "" )
         {
             // accessToken is required
             if ( accessToken.IsNullOrWhiteSpace() )
@@ -311,7 +403,6 @@ namespace Rock.Security.ExternalAuthentication
 
             string username = string.Empty;
             string oidcId = idToken.GetClaimValue( JwtClaimTypes.Subject );
-            //string facebookLink = facebookUser.link;
 
             string userName = "OIDC_" + oidcId;
             UserLogin user = null;
@@ -328,11 +419,19 @@ namespace Rock.Security.ExternalAuthentication
                 {
                     // Get name/email from Facebook login
                     string lastName = idToken.GetClaimValue( JwtClaimTypes.FamilyName ).ToStringSafe();
+                    string middleName = idToken.GetClaimValue( JwtClaimTypes.MiddleName ).ToStringSafe();
                     string firstName = idToken.GetClaimValue( JwtClaimTypes.GivenName ).ToStringSafe();
-                    string email = string.Empty;
-                    try
-                    { email = idToken.GetClaimValue( JwtClaimTypes.Email ).ToStringSafe(); }
-                    catch { }
+                    string nickName = idToken.GetClaimValue( JwtClaimTypes.NickName ).ToStringSafe();
+                    if ( nickName.IsNullOrWhiteSpace() )
+                    {
+                        nickName = idToken.GetClaimValue( JwtClaimTypes.Name ).ToStringSafe();
+                    }
+                    if ( nickName.IsNullOrWhiteSpace() )
+                    {
+                        nickName = idToken.GetClaimValue( JwtClaimTypes.PreferredUserName ).ToStringSafe();
+                    }
+
+                    string email = idToken.GetClaimValue( JwtClaimTypes.Email ).ToStringSafe();
 
                     Person person = null;
 
@@ -355,27 +454,21 @@ namespace Rock.Security.ExternalAuthentication
                             person.RecordTypeValueId = personRecordTypeId;
                             person.RecordStatusValueId = personStatusPending;
                             person.FirstName = firstName;
+                            person.MiddleName = middleName;
+                            person.NickName = nickName;
                             person.LastName = lastName;
                             person.Email = email;
                             person.IsEmailActive = true;
                             person.EmailPreference = EmailPreference.EmailAllowed;
-                            try
-                            {
-                                var gender = idToken.GetClaimValue( JwtClaimTypes.Gender );
-                                if ( gender == "male" )
-                                {
-                                    person.Gender = Gender.Male;
-                                }
-                                else if ( gender == "female" )
-                                {
-                                    person.Gender = Gender.Female;
-                                }
-                                else
-                                {
-                                    person.Gender = Gender.Unknown;
-                                }
-                            }
-                            catch { }
+
+                            var gender = idToken.GetClaimValue( JwtClaimTypes.Gender );
+                            UpdatePersonGender( person, gender );
+
+                            var birthDate = idToken.GetClaimValue( JwtClaimTypes.BirthDate );
+                            UpdatePersonBirthday( person, birthDate );
+
+                            var phone = idToken.GetClaimValue( JwtClaimTypes.PhoneNumber );
+                            UpdatePersonPhoneNumber( person, phone );
 
                             if ( person != null )
                             {
@@ -388,7 +481,6 @@ namespace Rock.Security.ExternalAuthentication
                             int typeId = EntityTypeCache.Get( typeof( OidcClient ) ).Id;
                             user = UserLoginService.Create( rockContext, person, AuthenticationServiceType.External, typeId, userName, "oidc", true );
                         }
-
                     } );
                 }
 
@@ -404,55 +496,11 @@ namespace Rock.Security.ExternalAuthentication
                         var person = personService.Get( user.PersonId.Value );
                         if ( person != null )
                         {
-                            // TODO: Handle person photo.
-                            // If person does not have a photo, try to get their Facebook photo
-                            if ( !person.PhotoId.HasValue )
-                            {
-                                //var restClient = new RestClient( string.Format( "https://graph.facebook.com/v3.3/{0}/picture?redirect=false&type=square&height=400&width=400", oidcId ) );
-                                //var restRequest = new RestRequest( Method.GET );
-                                //restRequest.RequestFormat = DataFormat.Json;
-                                //restRequest.AddHeader( "Accept", "application/json" );
-                                //var restResponse = restClient.Execute( restRequest );
-                                //if ( restResponse.StatusCode == HttpStatusCode.OK )
-                                //{
-                                //    dynamic picData = JsonConvert.DeserializeObject<ExpandoObject>( restResponse.Content, converter );
-                                //    bool isSilhouette = picData.data.is_silhouette;
-                                //    string url = picData.data.url;
+                            var address = idToken.GetClaimValue( JwtClaimTypes.Address );
+                            UpdatePersonAddress( person, address, rockContext );
 
-                                //    // If Facebook returned a photo url
-                                //    if ( !isSilhouette && !string.IsNullOrWhiteSpace( url ) )
-                                //    {
-                                //        // Download the photo from the URL provided
-                                //        restClient = new RestClient( url );
-                                //        restRequest = new RestRequest( Method.GET );
-                                //        restResponse = restClient.Execute( restRequest );
-                                //        if ( restResponse.StatusCode == HttpStatusCode.OK )
-                                //        {
-                                //            var bytes = restResponse.RawBytes;
-
-                                //            // Create and save the image
-                                //            BinaryFileType fileType = new BinaryFileTypeService( rockContext ).Get( Rock.SystemGuid.BinaryFiletype.PERSON_IMAGE.AsGuid() );
-                                //            if ( fileType != null )
-                                //            {
-                                //                var binaryFileService = new BinaryFileService( rockContext );
-                                //                var binaryFile = new BinaryFile();
-                                //                binaryFileService.Add( binaryFile );
-                                //                binaryFile.IsTemporary = false;
-                                //                binaryFile.BinaryFileType = fileType;
-                                //                binaryFile.MimeType = "image/jpeg";
-                                //                binaryFile.FileName = user.Person.NickName + user.Person.LastName + ".jpg";
-                                //                binaryFile.FileSize = bytes.Length;
-                                //                binaryFile.ContentStream = new MemoryStream( bytes );
-
-                                //                rockContext.SaveChanges();
-
-                                //                person.PhotoId = binaryFile.Id;
-                                //                rockContext.SaveChanges();
-                                //            }
-                                //        }
-                                //    }
-                                //}
-                            }
+                            var photoUri = idToken.GetClaimValue( JwtClaimTypes.Picture );
+                            UpdatePersonPhoto( person, user.UserName, photoUri, rockContext );
                         }
                     }
                 }
@@ -461,10 +509,193 @@ namespace Rock.Security.ExternalAuthentication
             }
         }
 
+        private void UpdatePersonPhoto( Person person, string userName, string photoUri, RockContext rockContext )
+        {
+            if ( !person.PhotoId.HasValue && photoUri.IsNotNullOrWhiteSpace() )
+            {
+                byte[] bytes = null;
+                string contentType = string.Empty;
+                var photoExtension = string.Empty;
+                using ( var client = new HttpClient() )
+                {
+                    var photoResponse = client.GetAsync( photoUri ).GetAwaiter().GetResult();
+                    if ( photoResponse.IsSuccessStatusCode )
+                    {
+                        bytes = photoResponse.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult();
+                        contentType = photoResponse.Content.Headers.ContentType.MediaType;
+                        photoExtension = GetValidExtensionFromContentType( contentType );
+                    }
+                }
+
+                if ( bytes != null && contentType.IsNotNullOrWhiteSpace() && photoExtension.IsNotNullOrWhiteSpace() )
+                {
+                    // Create and save the image
+                    var fileType = new BinaryFileTypeService( rockContext ).Get( Rock.SystemGuid.BinaryFiletype.PERSON_IMAGE.AsGuid() );
+                    if ( fileType != null )
+                    {
+                        var binaryFileService = new BinaryFileService( rockContext );
+                        var binaryFile = new BinaryFile();
+                        binaryFileService.Add( binaryFile );
+                        binaryFile.IsTemporary = false;
+                        binaryFile.BinaryFileType = fileType;
+                        binaryFile.MimeType = contentType;
+                        binaryFile.FileName = $"{userName.RemoveSpecialCharacters()}.{photoExtension}";
+                        binaryFile.FileSize = bytes.Length;
+                        binaryFile.ContentStream = new MemoryStream( bytes );
+
+                        rockContext.SaveChanges();
+
+                        person.PhotoId = binaryFile.Id;
+                        rockContext.SaveChanges();
+                    }
+                }
+            }
+        }
+
+        private void UpdatePersonAddress( Person person, string address, RockContext rockContext )
+        {
+            if ( address.IsNullOrWhiteSpace() )
+            {
+                return;
+            }
+
+            var addressObject = JObject.Parse( address );
+            var streetAddress = addressObject.TryGetString( "street_address" );
+            var city = addressObject.TryGetString( "locality" );
+            var state = addressObject.TryGetString( "region" );
+            var postalCode = addressObject.TryGetString( "postal_code" );
+            var country = addressObject.TryGetString( "country" );
+
+            var familyGroup = person.GetFamily( rockContext );
+            var homeAddressDv = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME );
+            var hasHomeAddress = familyGroup.GroupLocations.Where( gl => gl.GroupLocationTypeValueId == homeAddressDv.Id ).Any();
+            if ( !hasHomeAddress )
+            {
+                var streetAddresses = streetAddress.Split( new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries );
+                var homeLocation = new Location
+                {
+                    Street1 = streetAddresses.Length > 0 ? streetAddresses[0].Trim() : streetAddress,
+                    Street2 = streetAddresses.Length > 1 ? streetAddresses[1].Trim() : string.Empty,
+                    City = city,
+                    State = state,
+                    PostalCode = postalCode,
+                    Country = country
+                };
+                familyGroup.GroupLocations.Add( new GroupLocation
+                {
+                    Location = homeLocation,
+                    GroupLocationTypeValueId = homeAddressDv.Id
+                } );
+                rockContext.SaveChanges();
+            }
+        }
+
+        private void UpdatePersonPhoneNumber( Person person, string phone )
+        {
+            if ( phone.IsNullOrWhiteSpace() )
+            {
+                return;
+            }
+
+            var countryCode = string.Empty;
+            var extension = string.Empty;
+            var extStartIndex = phone.IndexOf( ";ext=" );
+            var defaultPhoneNumberType = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_HOME );
+
+            if ( extStartIndex > 0 )
+            {
+                extension = phone.Substring( extStartIndex );
+                phone = phone.Replace( extension, string.Empty );
+                extension = PhoneNumber.CleanNumber( extension.Replace( ";ext=", "" ) );
+            }
+
+            phone = phone.Trim();
+
+            if ( phone.StartsWith( "+" ) )
+            {
+                var phoneParts = phone.Split( new char[] { ' ', '(', ')' }, StringSplitOptions.RemoveEmptyEntries );
+                countryCode = PhoneNumber.CleanNumber( phoneParts[0] );
+                phone = string.Join( "", phoneParts, 1, phoneParts.Length - 1 );
+            }
+
+            person.PhoneNumbers.Add( new PhoneNumber
+            {
+                Number = PhoneNumber.CleanNumber( phone ),
+                Extension = extension,
+                CountryCode = countryCode,
+                NumberTypeValueId = defaultPhoneNumberType.Id
+            } );
+        }
+
+        private void UpdatePersonGender( Person person, string gender )
+        {
+            if ( gender == "male" )
+            {
+                person.Gender = Gender.Male;
+            }
+            else if ( gender == "female" )
+            {
+                person.Gender = Gender.Female;
+            }
+            else
+            {
+                person.Gender = Gender.Unknown;
+            }
+        }
+
+        /// <summary>
+        /// Gets the valid image extension. This method will return only gif, jpg, or png. All other content types will return empty string and therefore should not be processed.
+        /// </summary>
+        /// <param name="contentType">Content type</param>
+        /// <returns></returns>
+        private string GetValidExtensionFromContentType( string contentType )
+        {
+            if ( contentType.Equals( "image/gif", StringComparison.InvariantCultureIgnoreCase ) )
+            {
+                return "gif";
+            }
+
+            if ( contentType.Equals( "image/jpeg", StringComparison.InvariantCultureIgnoreCase ) )
+            {
+                return "jpg";
+            }
+
+            if ( contentType.Equals( "image/png", StringComparison.InvariantCultureIgnoreCase ) )
+            {
+                return "png";
+            }
+            return string.Empty;
+        }
+
         private string EncodeBcrypt( string input )
         {
             var salt = BCrypt.Net.BCrypt.GenerateSalt( 12 );
             return BCrypt.Net.BCrypt.HashPassword( input, salt );
+        }
+
+        private void UpdatePersonBirthday( Person person, string birthDate )
+        {
+            if ( birthDate.IsNotNullOrWhiteSpace() )
+            {
+                return;
+            }
+
+            if ( birthDate.Length == 4 )
+            {
+                person.BirthYear = birthDate.AsIntegerOrNull();
+                return;
+            }
+
+            var dateParts = birthDate.Split( '-' );
+            if ( dateParts.Length == 3 )
+            {
+                if ( !dateParts[0].Equals( "0000" ) )
+                {
+                    person.BirthYear = dateParts[0].AsIntegerOrNull();
+                }
+                person.BirthMonth = dateParts[1].AsIntegerOrNull();
+                person.BirthDay = dateParts[2].AsIntegerOrNull();
+            }
         }
     }
 }
