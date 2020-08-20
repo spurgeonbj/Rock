@@ -14,9 +14,6 @@ using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
-using System.Security.Cryptography;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 
 namespace Rock.Security.ExternalAuthentication
 {
@@ -146,12 +143,6 @@ namespace Rock.Security.ExternalAuthentication
 
             var state = request.QueryString["state"];
 
-            //if ( HttpContext.Current.Session["oidc-nonce"].ToString() != nonce )
-            //{
-            //    ExceptionLogService.LogException( new Exception( "Open Id Connect nonce did not match." ), HttpContext.Current );
-            //    return false;
-            //}
-
             try
             {
                 var client = new TokenClient( GetTokenUrl(), GetAttributeValue( AttributeKey.ApplicationId ), GetAttributeValue( AttributeKey.ApplicationSecret ) );
@@ -208,7 +199,7 @@ namespace Rock.Security.ExternalAuthentication
             HttpContext.Current.Session["oidc-nonce"] = nonce;
             HttpContext.Current.Session["oidc-state"] = state;
             HttpContext.Current.Session["oidc-url"] = returnUrl;
-            
+
             // TODO: add requested scopes
             return new Uri( GetLoginUrl( GetRedirectUrl( request ), nonce, state ) );
         }
