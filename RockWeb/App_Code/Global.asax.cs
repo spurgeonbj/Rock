@@ -44,7 +44,9 @@ using Rock.Communication;
 using Rock.Configuration;
 using Rock.Data;
 using Rock.Jobs;
+using Rock.MessageBus;
 using Rock.MessageBus.Consumers;
+using Rock.MessageBus.Tasks;
 using Rock.Model;
 using Rock.Plugin;
 using Rock.Transactions;
@@ -238,7 +240,7 @@ namespace RockWeb
                     }
 
                     // Setup message bus
-                    busControl = Bus.Factory.CreateUsingInMemory( cfg =>
+                    /*busControl = Bus.Factory.CreateUsingInMemory( cfg =>
                     {
                          cfg.ReceiveEndpoint( "entity_updates", ep =>
                          {
@@ -246,15 +248,33 @@ namespace RockWeb
                          });
                     });
                     busControl.StartAsync();
+                    */
 
-                    // test registering a consumer endpoint after the bus is started 
-                    busControl.ConnectReceiveEndpoint( "entity_updates", ep =>
+
+                    busControl = Bus.Factory.CreateUsingRabbitMq( cfg =>
                     {
-                        ep.Consumer( () => new EntityUpdateConsumer() );
-                    });
+                        cfg.Host( "gull.rmq.cloudamqp.com", "xujdksct", h =>
+                        {
+                            h.Username( "xujdksct" );
+                            h.Password( "bJRLpEZPLHcM1pHJkYX4FI7PIkCjTlEg" );
+                        } );
+
+                        cfg.ReceiveEndpoint( "entity_updates", ep =>
+                        {
+                            ep.Consumer( () => new EntityUpdateConsumer() );
+                        } );
+                    } );
+                    busControl.StartAsync();
 
                     
-                    
+                    busControl.ConnectReceiveEndpoint( "rock_tasks", ep =>
+                    {
+                        //ep.Consumer<LaunchWorkflowTask>();
+                        ep.Consumer( () => new WriteInteractionTask() );
+                    } );
+
+
+
 
                     // setup and launch the jobs infrastructure if running under IIS
                     bool runJobsInContext = Convert.ToBoolean( ConfigurationManager.AppSettings["RunJobsInIISContext"] );

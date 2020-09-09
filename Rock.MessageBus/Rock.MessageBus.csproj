@@ -93,8 +93,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Consumers\EntityUpdateConsumer.cs" />
+    <Compile Include="IRockTask.cs" />
     <Compile Include="Messages\IEntityUpdate.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Tasks\LaunchWorkflowTask.cs" />
+    <Compile Include="Tasks\WriteInteractionTask.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

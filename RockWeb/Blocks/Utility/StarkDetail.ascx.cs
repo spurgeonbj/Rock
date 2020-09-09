@@ -21,6 +21,7 @@ using System.Web.UI;
 using MassTransit;
 using Rock.Attribute;
 using Rock.MessageBus.Messages;
+using Rock.MessageBus.Tasks;
 using Rock.Model;
 
 namespace RockWeb.Blocks.Utility
@@ -114,9 +115,9 @@ namespace RockWeb.Blocks.Utility
                 var bus = ( IBus ) Global.MessageBusContext;
 
                 // Send
-                var endpoint = bus.GetSendEndpoint( new Uri( "queue:entity_updates" ) );
-                var sendEndpoint = endpoint.Result;
-                sendEndpoint.Send<IEntityUpdate>( new { EntityType = "test send" } );
+                //var endpoint = bus.GetSendEndpoint( new Uri( "queue:entity_updates" ) );
+                //var sendEndpoint = endpoint.Result;
+                //sendEndpoint.Send<IEntityUpdate>( new { EntityType = "test send" } );
             }
         }
 
@@ -153,7 +154,12 @@ namespace RockWeb.Blocks.Utility
             // Send
             var endpoint = bus.GetSendEndpoint( new Uri( "queue:entity_updates" ) );
             var sendEndpoint = endpoint.Result;
-            sendEndpoint.Send<IEntityUpdate>( new { EntityType = "test send" } );
+            sendEndpoint.Send<IEntityUpdate>( new { EntityType = "test send 3" } );
+
+            var endpoint2 = bus.GetSendEndpoint( new Uri( "queue:rock_tasks" ) );
+            var sendEndpoint2 = endpoint2.Result;
+            sendEndpoint2.Send<LaunchWorkflow>( new LaunchWorkflow { WorkflowTypeId = 1, Message = "Test 1" } );
+            sendEndpoint2.Send<WriteInteraction>( new WriteInteraction { InteractionChannel = 1, InteractionComponent = 2, Operation ="Hello" } );
 
             // Publish
             //bus.Publish<IEntityUpdate>( new { EntityType = "test publish" } );
