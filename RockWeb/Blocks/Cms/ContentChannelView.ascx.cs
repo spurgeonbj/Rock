@@ -271,6 +271,19 @@ namespace RockWeb.Blocks.Cms
             }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether data should cached.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if the data should be cached; otherwise, <c>false</c>.
+        /// </value>
+        private bool ShouldCacheData
+        {
+            get
+            {
+                return ItemCacheDuration.HasValue && ItemCacheDuration.Value > 0 && !RockCache.IsCacheSerialized;
+            }
+        }
         #endregion Properties
 
         #region Base Control Methods
@@ -868,7 +881,7 @@ $(document).ready(function() {
             try
             {
                 // only load from the cache if a cacheDuration was specified
-                if ( ItemCacheDuration.HasValue && ItemCacheDuration.Value > 0 )
+                if ( ShouldCacheData )
                 {
                     template = GetCacheItem( TEMPLATE_CACHE_KEY ) as Template;
                 }
@@ -877,7 +890,7 @@ $(document).ready(function() {
                 {
                     template = Template.Parse( GetAttributeValue( AttributeKey.Template ) );
 
-                    if ( ItemCacheDuration.HasValue && ItemCacheDuration.Value > 0 )
+                    if ( ShouldCacheData )
                     {
                         string cacheTags = GetAttributeValue( AttributeKey.CacheTags ) ?? string.Empty;
                         AddCacheItem( TEMPLATE_CACHE_KEY, template, ItemCacheDuration.Value, cacheTags );
@@ -907,7 +920,7 @@ $(document).ready(function() {
             List<ContentChannelItem> items = null;
 
             // only load from the cache if a cacheDuration was specified
-            if ( ItemCacheDuration.HasValue && ItemCacheDuration.Value > 0 )
+            if ( ShouldCacheData )
             {
                 items = GetCacheItem( CONTENT_CACHE_KEY ) as List<ContentChannelItem>;
             }
@@ -1075,7 +1088,7 @@ $(document).ready(function() {
 
                     }
 
-                    if ( ItemCacheDuration.HasValue && ItemCacheDuration.Value > 0 && !isQueryParameterFilteringEnabled )
+                    if ( ShouldCacheData && !isQueryParameterFilteringEnabled )
                     {
                         string cacheTags = GetAttributeValue( AttributeKey.CacheTags ) ?? string.Empty;
                         AddCacheItem( CONTENT_CACHE_KEY, items, ItemCacheDuration.Value, cacheTags );
@@ -1164,7 +1177,7 @@ $(document).ready(function() {
             List<TagModel> tags = null;
 
             // only load from the cache if a cacheDuration was specified
-            if ( ItemCacheDuration.HasValue && ItemCacheDuration.Value > 0 )
+            if ( ShouldCacheData )
             {
                 items = GetCacheItem( CONTENT_CACHE_KEY ) as List<ContentChannelItem>;
                 tags = GetCacheItem( TAG_CACHE_KEY ) as List<TagModel>;
@@ -1322,7 +1335,7 @@ $(document).ready(function() {
 
                     }
 
-                    if ( ItemCacheDuration.HasValue && ItemCacheDuration.Value > 0 && !isQueryParameterFilteringEnabled )
+                    if ( ShouldCacheData && !isQueryParameterFilteringEnabled )
                     {
                         string cacheTags = GetAttributeValue( AttributeKey.CacheTags ) ?? string.Empty;
                         AddCacheItem( CONTENT_CACHE_KEY, items, ItemCacheDuration.Value, cacheTags );
@@ -1455,6 +1468,7 @@ $(document).ready(function() {
 
             return contentChannelItemQuery;
         }
+
         /// <summary>
         /// Shows the edit.
         /// </summary>
