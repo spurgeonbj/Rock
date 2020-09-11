@@ -35,7 +35,7 @@ namespace Rock.Model
         /// <param name="entityTypeId">The entity type identifier.</param>
         /// <param name="personId">The person identifier.</param>
         /// <returns></returns>
-        public IQueryable<IEntity> GetFollowedItems( int entityTypeId, int personId )
+        public IQueryable<IEntity> GetFollowedItems( long entityTypeId, long personId )
         {
             EntityTypeCache itemEntityType = EntityTypeCache.Get( entityTypeId );
             var rockContext = this.Context as RockContext;

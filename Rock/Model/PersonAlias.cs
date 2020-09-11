@@ -58,7 +58,7 @@ namespace Rock.Model
         /// </value>
         [Required]
         [DataMember( IsRequired = true )]
-        public int PersonId { get; set; }
+        public long PersonId { get; set; }
 
         /// <summary>
         /// Gets or sets an alias person Id.  In the case of a merged person record, the AliasPersonId is the previous person id that was merged into
@@ -68,7 +68,7 @@ namespace Rock.Model
         /// A <see cref="System.Int32"/> representing the new/current Id of the <see cref="Rock.Model.Person"/>.
         /// </value>
         [Index( IsUnique = true )]
-        public int? AliasPersonId { get; set; }
+        public long? AliasPersonId { get; set; }
 
         /// <summary>
         /// Gets or sets the new <see cref="System.Guid"/> identifier of the <see cref="Rock.Model.Person"/>. This property is required.

@@ -85,7 +85,7 @@ namespace Rock.Field
         /// <param name="configurationValues">The configuration values.</param>
         /// <param name="condensed">if set to <c>true</c> [condensed].</param>
         /// <returns></returns>
-        string FormatValue( Control parentControl, int? entityTypeId, int? entityId, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed );
+        string FormatValue( Control parentControl, long? entityTypeId, long? entityId, string value, Dictionary<string, ConfigurationValue> configurationValues, bool condensed );
 
         /// <summary>
         /// Formats the value as HTML.

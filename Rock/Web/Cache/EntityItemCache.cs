@@ -55,7 +55,7 @@ namespace Rock.Web.Cache
         /// The identifier.
         /// </value>
         [DataMember]
-        public virtual int Id { get; protected set; }
+        public virtual long Id { get; protected set; }
 
         /// <summary>
         /// Gets or sets the unique identifier.
@@ -73,7 +73,7 @@ namespace Rock.Web.Cache
         /// The foreign identifier.
         /// </value>
         [DataMember]
-        public virtual int? ForeignId { get; protected set; }
+        public virtual long? ForeignId { get; protected set; }
 
         /// <summary>
         /// Gets or sets the foreign unique identifier.

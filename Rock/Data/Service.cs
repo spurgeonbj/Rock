@@ -124,14 +124,14 @@ namespace Rock.Data
              * Keep in mind that the Context might currently be referencing Entities of a different
              * type than the one this call is targeting, hence the implicit type cast check below.
              */
-            IList<int> excludedIds = statesToExclude?.Any() == true
+            var excludedIds = statesToExclude?.Any() == true
                 ? Context.ChangeTracker
                     .Entries()
                     .Where( a => statesToExclude.Contains( a.State ) )
                     .Where( a => a.Entity as Entity<T> != null )
                     .Select( a => ( ( Entity<T> ) a.Entity ).Id )
                     .ToList()
-                : new List<int>();
+                : new List<long>();
 
             return _objectSet.Where( a => !excludedIds.Contains( a.Id ) );
         }
@@ -192,7 +192,7 @@ namespace Rock.Data
         /// </summary>
         /// <param name="id">id</param>
         /// <returns></returns>
-        public virtual T Get( int id )
+        public virtual T Get( long id )
         {
             return AsNoFilter().FirstOrDefault( t => t.Id == id );
         }
@@ -348,7 +348,7 @@ namespace Rock.Data
         /// <param name="parameterExpression">The parameter expression.</param>
         /// <param name="whereExpression">The where expression.</param>
         /// <returns></returns>
-        public IQueryable<int> GetIds( ParameterExpression parameterExpression, Expression whereExpression )
+        public IQueryable<long> GetIds( ParameterExpression parameterExpression, Expression whereExpression )
         {
             return Get( parameterExpression, whereExpression, null ).Select( t => t.Id );
         }
@@ -358,7 +358,7 @@ namespace Rock.Data
         /// </summary>
         /// <param name="id">The identifier.</param>
         /// <returns></returns>
-        public virtual Guid? GetGuid( int id )
+        public virtual Guid? GetGuid( long id )
         {
             return this.Queryable().Where( a => a.Id == id ).Select( a => ( Guid? ) a.Guid ).FirstOrDefault();
         }
@@ -368,16 +368,16 @@ namespace Rock.Data
         /// </summary>
         /// <param name="guid">The unique identifier.</param>
         /// <returns></returns>
-        public virtual int? GetId( Guid guid )
+        public virtual long? GetId( Guid guid )
         {
-            return this.Queryable().Where( a => a.Guid == guid ).Select( a => ( int? ) a.Id ).FirstOrDefault();
+            return this.Queryable().Where( a => a.Guid == guid ).Select( a => ( long? ) a.Id ).FirstOrDefault();
         }
 
         /// <summary>
         /// Trys to get the model with the id value
         /// </summary>
         /// <returns></returns>
-        public virtual bool TryGet( int id, out T item )
+        public virtual bool TryGet( long id, out T item )
         {
             item = Get( id );
             if ( item == null )
@@ -393,13 +393,13 @@ namespace Rock.Data
         /// </summary>
         /// <param name="ids">The ids.</param>
         /// <returns></returns>
-        public virtual IQueryable<T> GetByIds( List<int> ids )
+        public virtual IQueryable<T> GetByIds( List<long> ids )
         {
             if ( ids.Count == 1 )
             {
                 // if we only have 1 Id in our list, we don't have to use Contains
                 // Contains is less efficient, since Linq has to Recompile the SQL everytime. See https://docs.microsoft.com/en-us/ef/ef6/fundamentals/performance/perf-whitepaper#41-using-ienumerabletcontainstt-value
-                int id = ids[0];
+                var id = ids[0];
                 return Queryable().Where( t => t.Id == id );
             }
             else
@@ -435,7 +435,7 @@ namespace Rock.Data
         /// </summary>
         /// <param name="ids">The ids.</param>
         /// <returns></returns>
-        public virtual List<T> GetListByIds( List<int> ids )
+        public virtual List<T> GetListByIds( List<long> ids )
         {
             return GetByIds( ids ).ToList();
         }
@@ -557,9 +557,9 @@ namespace Rock.Data
         /// <param name="oldIndex">The old index.</param>
         /// <param name="newIndex">The new index.</param>
         /// <returns>List of Ids who's order changed</returns>
-        public virtual List<int> Reorder( List<T> items, int oldIndex, int newIndex )
+        public virtual List<long> Reorder( List<T> items, int oldIndex, int newIndex )
         {
-            var Ids = new List<int>();
+            var Ids = new List<long>();
 
             T movedItem = items[oldIndex];
             if ( movedItem != null )
@@ -646,7 +646,7 @@ namespace Rock.Data
         /// </summary>
         /// <param name="id">The identifier.</param>
         /// <returns></returns>
-        public IQueryable<Rock.Model.Person> GetFollowers( int id )
+        public IQueryable<Rock.Model.Person> GetFollowers( long id )
         {
             var rockContext = this.Context as RockContext;
 

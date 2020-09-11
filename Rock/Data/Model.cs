@@ -72,7 +72,7 @@ namespace Rock.Data
         [DataMember]
         [HideFromReporting]
         [RockClientInclude( "Leave this as NULL to let Rock set this" )]
-        public int? CreatedByPersonAliasId { get; set; }
+        public long? CreatedByPersonAliasId { get; set; }
 
         /// <summary>
         /// Gets or sets the modified by person alias identifier.
@@ -83,7 +83,7 @@ namespace Rock.Data
         [DataMember]
         [HideFromReporting]
         [RockClientInclude( "If you need to set this manually, set ModifiedAuditValuesAlreadyUpdated=True to prevent Rock from setting it" )]
-        public int? ModifiedByPersonAliasId { get; set; }
+        public long? ModifiedByPersonAliasId { get; set; }
 
         #endregion
 
@@ -113,7 +113,7 @@ namespace Rock.Data
         /// </value>
         [LavaInclude]
         [HideFromReporting]
-        public virtual int? CreatedByPersonId
+        public virtual long? CreatedByPersonId
         {
             get
             {
@@ -153,7 +153,7 @@ namespace Rock.Data
         /// </value>
         [LavaInclude]
         [HideFromReporting]
-        public virtual int? ModifiedByPersonId
+        public virtual long? ModifiedByPersonId
         {
             get
             {

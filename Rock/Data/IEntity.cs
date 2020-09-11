@@ -31,7 +31,7 @@ namespace Rock.Data
         /// <value>
         /// The id.
         /// </value>
-        int Id { get; set; }
+        long Id { get; set; }
 
         /// <summary>
         /// Gets or sets the GUID.
@@ -42,12 +42,12 @@ namespace Rock.Data
         Guid Guid { get; set; }
 
         /// <summary>
-        /// Gets or sets the int foreign identifier.
+        /// Gets or sets the foreign identifier.
         /// </summary>
         /// <value>
-        /// The int foreign identifier.
+        /// The foreign identifier.
         /// </value>
-        int? ForeignId { get; set; }
+        long? ForeignId { get; set; }
 
         /// <summary>
         /// Gets or sets the Guid foreign identifier.
@@ -71,7 +71,7 @@ namespace Rock.Data
         /// <value>
         /// The type id.
         /// </value>
-        int TypeId { get; }
+        long TypeId { get; }
 
         /// <summary>
         /// Gets the unique type name of the entity.  Typically this is the qualified name of the class

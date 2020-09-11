@@ -49,7 +49,7 @@ namespace Rock.Data
         [Key]
         [DataMember]
         [IncludeForReporting]
-        public int Id { get; set; }
+        public long Id { get; set; }
 
         /// <summary>
         /// Gets or sets a <see cref="System.Guid"/> value that is a guaranteed unique identifier for the entity object.  This value 
@@ -83,7 +83,7 @@ namespace Rock.Data
         /// </value>
         [DataMember]
         [HideFromReporting]
-        public int? ForeignId { get; set; }
+        public long? ForeignId { get; set; }
 
         /// <summary>
         /// Gets or sets an optional Guid foreign identifier.  This can be used for importing or syncing data to a foreign system
@@ -118,7 +118,7 @@ namespace Rock.Data
         /// An <see cref="System.Int32"/> that represents the identifier for the current Entity object type. 
         /// </value>
         [LavaInclude]
-        public virtual int TypeId
+        public virtual long TypeId
         {
             get
             {
@@ -514,7 +514,7 @@ namespace Rock.Data
         /// <param name="workflowTypeId">The workflow type identifier.</param>
         /// <param name="workflowName">Name of the workflow.</param>
         /// <param name="workflowAttributeValues">Any workflow attribute values that should be set.</param>
-        public void LaunchWorkflow( int? workflowTypeId, string workflowName = "", Dictionary<string, string> workflowAttributeValues = null )
+        public void LaunchWorkflow( long? workflowTypeId, string workflowName = "", Dictionary<string, string> workflowAttributeValues = null )
         {
             if ( workflowTypeId.HasValue )
             {

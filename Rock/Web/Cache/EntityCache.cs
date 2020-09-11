@@ -89,7 +89,7 @@ namespace Rock.Web.Cache
         /// </summary>
         /// <param name="id">The identifier.</param>
         /// <returns></returns>
-        public static T Get( int id )
+        public static T Get( long id )
         {
             return Get( id, null );
         }
@@ -100,7 +100,7 @@ namespace Rock.Web.Cache
         /// <param name="id">The identifier.</param>
         /// <param name="rockContext">The rock context.</param>
         /// <returns></returns>
-        public static T Get( int id, RockContext rockContext )
+        public static T Get( long id, RockContext rockContext )
         {
             if ( id == 0 )
             {
@@ -378,7 +378,7 @@ namespace Rock.Web.Cache
         /// <param name="id">The identifier.</param>
         /// <param name="rockContext">The rock context.</param>
         /// <returns></returns>
-        private static T QueryDb( int id, DbContext rockContext )
+        private static T QueryDb( long id, DbContext rockContext )
         {
             if ( rockContext != null )
             {
@@ -397,13 +397,15 @@ namespace Rock.Web.Cache
         /// <param name="id">The identifier.</param>
         /// <param name="rockContext">The rock context.</param>
         /// <returns></returns>
-        private static T QueryDbWithContext( int id, DbContext rockContext )
+        private static T QueryDbWithContext( long id, DbContext rockContext )
         {
             var service = new Service<TT>( rockContext );
             var entity = service.Get( id );
 
             if ( entity == null )
+            {
                 return default( T );
+            }
 
             var value = new T();
             value.SetFromEntity( entity );

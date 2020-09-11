@@ -43,7 +43,7 @@ namespace Rock.Model
         /// </value>
         [Required]
         [DataMember( IsRequired = true )]
-        public int AttributeValueId { get; set; }
+        public long AttributeValueId { get; set; }
 
         /// <summary>
         /// Gets or sets the value of the AttributeValue at this point in history
@@ -97,7 +97,7 @@ namespace Rock.Model
         /// The value as person identifier.
         /// </value>
         [DataMember]
-        public int? ValueAsPersonId { get; set; }
+        public long? ValueAsPersonId { get; set; }
 
         #endregion
 

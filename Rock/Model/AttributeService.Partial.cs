@@ -31,7 +31,7 @@ namespace Rock.Model
         /// <returns>
         /// A queryable collection of <see cref="Rock.Model.Attribute">Attributes</see> that are related to the specified <see cref="Rock.Model.EntityType"/>.
         /// </returns>
-        public IQueryable<Attribute> GetByEntityTypeId( int? entityTypeId )
+        public IQueryable<Attribute> GetByEntityTypeId( long? entityTypeId )
         {
             return GetByEntityTypeId( entityTypeId, true );
         }
@@ -42,7 +42,7 @@ namespace Rock.Model
         /// <param name="entityTypeId">The entity type identifier.</param>
         /// <param name="includeInactive">if set to <c>true</c> [include inactive].</param>
         /// <returns></returns>
-        public IQueryable<Attribute> GetByEntityTypeId( int? entityTypeId, bool includeInactive )
+        public IQueryable<Attribute> GetByEntityTypeId( long? entityTypeId, bool includeInactive )
         {
             var query = Queryable();
 
@@ -68,7 +68,7 @@ namespace Rock.Model
         /// </summary>
         /// <param name="categoryId">A <see cref="System.Int32"/> representing the CategoryId of the <see cref="Rock.Model.Category"/> to search by.</param>
         /// <returns>A queryable collection of <see cref="Rock.Model.Attribute">Attributes</see> that are part of the specified <see cref="Rock.Model.Category"/></returns>
-        public IQueryable<Attribute> GetByCategoryId( int categoryId )
+        public IQueryable<Attribute> GetByCategoryId( long categoryId )
         {
             return GetByCategoryId( categoryId, true );
         }
@@ -79,7 +79,7 @@ namespace Rock.Model
         /// <param name="categoryId">The category identifier.</param>
         /// <param name="includeInactive">if set to <c>true</c> [include inactive].</param>
         /// <returns></returns>
-        public IQueryable<Attribute> GetByCategoryId( int categoryId, bool includeInactive )
+        public IQueryable<Attribute> GetByCategoryId( long categoryId, bool includeInactive )
         {
             var queryable = Queryable().Where( a => a.Categories.Any( c => c.Id == categoryId ) );
             if ( !includeInactive )
@@ -97,7 +97,7 @@ namespace Rock.Model
         /// <param name="entityQualifierColumn">A <see cref="System.String" /> represents the name of the EntityQualifierColumn to search by.</param>
         /// <param name="entityQualifierValue">A <see cref="System.String"/> that represents the qualifier value to search by.</param>
         /// <returns>A queryable collection of <see cref="Rock.Model.Attribute">Attributes</see> that matches the specified value.</returns>
-        public IQueryable<Attribute> Get( int? entityTypeId, string entityQualifierColumn, string entityQualifierValue )
+        public IQueryable<Attribute> Get( long? entityTypeId, string entityQualifierColumn, string entityQualifierValue )
         {
             return GetByEntityTypeQualifier( entityTypeId, entityQualifierColumn, entityQualifierValue, true );
         }
@@ -110,7 +110,7 @@ namespace Rock.Model
         /// <param name="entityQualifierValue">The entity qualifier value.</param>
         /// <param name="includeInactive">if set to <c>true</c> [include inactive].</param>
         /// <returns></returns>
-        public IQueryable<Attribute> GetByEntityTypeQualifier( int? entityTypeId, string entityQualifierColumn, string entityQualifierValue, bool includeInactive )
+        public IQueryable<Attribute> GetByEntityTypeQualifier( long? entityTypeId, string entityQualifierColumn, string entityQualifierValue, bool includeInactive )
         {
             var query = Queryable();
 
@@ -282,7 +282,7 @@ namespace Rock.Model
         /// </summary>
         /// <param name="id">The identifier.</param>
         /// <returns></returns>
-        public override Guid? GetGuid( int id )
+        public override Guid? GetGuid( long id )
         {
             var cacheItem = Rock.Web.Cache.AttributeCache.Get( id );
             if ( cacheItem != null )

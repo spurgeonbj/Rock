@@ -165,14 +165,14 @@ namespace Rock.Transactions
         /// <value>
         /// The entity identifier.
         /// </value>
-        public int? EntityId { get; set; }
+        public long? EntityId { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LaunchWorkflowTransaction{T}"/> class.
         /// </summary>
         /// <param name="workflowTypeGuid">The workflow type unique identifier.</param>
         /// <param name="entityId">The entity identifier.</param>
-        public LaunchWorkflowTransaction( Guid workflowTypeGuid, int entityId ) : base( workflowTypeGuid )
+        public LaunchWorkflowTransaction( Guid workflowTypeGuid, long entityId ) : base( workflowTypeGuid )
         {
             EntityId = entityId;
         }
@@ -183,7 +183,7 @@ namespace Rock.Transactions
         /// <param name="workflowTypeGuid">The workflow type unique identifier.</param>
         /// <param name="workflowName">Name of the workflow.</param>
         /// <param name="entityId">The entity identifier.</param>
-        public LaunchWorkflowTransaction( Guid workflowTypeGuid, string workflowName, int entityId ) : base( workflowTypeGuid, workflowName )
+        public LaunchWorkflowTransaction( Guid workflowTypeGuid, string workflowName, long entityId ) : base( workflowTypeGuid, workflowName )
         {
             EntityId = entityId;
         }
@@ -193,7 +193,7 @@ namespace Rock.Transactions
         /// </summary>
         /// <param name="workflowTypeId">The workflow type identifier.</param>
         /// <param name="entityId">The entity identifier.</param>
-        public LaunchWorkflowTransaction( int workflowTypeId, int entityId ) : base( workflowTypeId )
+        public LaunchWorkflowTransaction( long workflowTypeId, long entityId ) : base( workflowTypeId )
         {
             EntityId = entityId;
         }
@@ -204,7 +204,7 @@ namespace Rock.Transactions
         /// <param name="workflowTypeId">The workflow type identifier.</param>
         /// <param name="workflowName">Name of the workflow.</param>
         /// <param name="entityId">The entity identifier.</param>
-        public LaunchWorkflowTransaction( int workflowTypeId, string workflowName, int entityId ) : base( workflowTypeId, workflowName )
+        public LaunchWorkflowTransaction( long workflowTypeId, string workflowName, long entityId ) : base( workflowTypeId, workflowName )
         {
             EntityId = entityId;
         }

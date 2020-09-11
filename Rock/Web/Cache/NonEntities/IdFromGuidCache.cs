@@ -32,7 +32,7 @@ namespace Rock.Web.Cache
         /// <summary>
         /// Use Static Get() method to instantiate
         /// </summary>
-        public IdFromGuidCache( int id )
+        public IdFromGuidCache( long id )
         {
             Id = id;
         }
@@ -43,7 +43,7 @@ namespace Rock.Web.Cache
         /// Gets the id.
         /// </summary>
 		[DataMember]
-        public int Id { get; private set; }
+        public long Id { get; private set; }
 
         #region Static Methods
 
@@ -52,7 +52,7 @@ namespace Rock.Web.Cache
         /// </summary>
         /// <param name="guid">The unique identifier.</param>
         /// <returns></returns>
-        public static int? GetId( Guid guid )
+        public static long? GetId( Guid guid )
         {
             return GetOrAddExisting( guid.ToString(), () => null )?.Id;
         }

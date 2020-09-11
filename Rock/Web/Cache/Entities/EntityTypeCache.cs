@@ -36,7 +36,7 @@ namespace Rock.Web.Cache
     {
         #region Static Fields
 
-        private static readonly ConcurrentDictionary<string, int> EntityTypes = new ConcurrentDictionary<string, int>( StringComparer.OrdinalIgnoreCase );
+        private static readonly ConcurrentDictionary<string, long> EntityTypes = new ConcurrentDictionary<string, long>( StringComparer.OrdinalIgnoreCase );
 
         #endregion
 
@@ -311,7 +311,7 @@ namespace Rock.Web.Cache
 
         #region Cache Related Methods
 
-        private static Dictionary<int, Type> _cacheableEntityTypeIds = null;
+        private static Dictionary<long, Type> _cacheableEntityTypeIds = null;
         private System.Reflection.MethodInfo _cachedItemGetMethod = null;
         private System.Reflection.MethodInfo _cachedItemFlushItemMethod = null;
         private System.Reflection.MethodInfo _cachedItemClearMethod = null;
@@ -444,7 +444,7 @@ namespace Rock.Web.Cache
         /// </summary>
         /// <param name="type">The type.</param>
         /// <returns></returns>
-        public static int? GetId( Type type )
+        public static long? GetId( Type type )
         {
             return Get( type ).Id;
         }
@@ -454,7 +454,7 @@ namespace Rock.Web.Cache
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static int? GetId<T>()
+        public static long? GetId<T>()
         {
             return GetId( typeof( T ) );
         }
@@ -464,7 +464,7 @@ namespace Rock.Web.Cache
         /// </summary>
         /// <param name="name">The name.</param>
         /// <returns></returns>
-        public static int? GetId( string name )
+        public static long? GetId( string name )
         {
             if ( string.IsNullOrEmpty( name ) )
             {
@@ -561,8 +561,7 @@ namespace Rock.Web.Cache
                 type = type.BaseType;
             }
 
-            int entityTypeId;
-            if ( EntityTypes.TryGetValue( type.FullName, out entityTypeId ) )
+            if ( EntityTypes.TryGetValue( type.FullName, out var entityTypeId ) )
             {
                 return Get( entityTypeId );
             }

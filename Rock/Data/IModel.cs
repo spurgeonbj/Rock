@@ -49,7 +49,7 @@ namespace Rock.Data
         /// <value>
         /// The created by person alias identifier.
         /// </value>
-        int? CreatedByPersonAliasId { get; set; }
+        long? CreatedByPersonAliasId { get; set; }
 
         /// <summary>
         /// Gets or sets the modified by person alias identifier.
@@ -57,7 +57,7 @@ namespace Rock.Data
         /// <value>
         /// The modified by person alias identifier.
         /// </value>
-        int? ModifiedByPersonAliasId { get; set; }
+        long? ModifiedByPersonAliasId { get; set; }
 
         /// <summary>
         /// Gets or sets the created by person alias.
