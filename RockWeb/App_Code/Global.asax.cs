@@ -269,13 +269,13 @@ namespace RockWeb
                     
                     busControl.ConnectReceiveEndpoint( "rock_tasks", ep =>
                     {
-                        //ep.Consumer<LaunchWorkflowTask>();
                         ep.Consumer( () => new WriteInteractionTask() );
+
+                        ep.Consumer( () => new LaunchWorkflowTask() );
                     } );
 
 
-
-
+                    
                     // setup and launch the jobs infrastructure if running under IIS
                     bool runJobsInContext = Convert.ToBoolean( ConfigurationManager.AppSettings["RunJobsInIISContext"] );
                     if ( runJobsInContext )
