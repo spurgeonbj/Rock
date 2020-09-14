@@ -1151,6 +1151,7 @@ $(document).ready(function() {
             dv.TransformEntityTypeId = ddlTransform.SelectedValueAsInt();
             dv.EntityTypeId = etpEntityType.SelectedEntityTypeId;
             dv.DataViewFilter = ReportingHelper.GetFilterFromControls( phFilters );
+            dv.IncludeDeceased = cbIncludeDeceased.Checked;
             ShowPreview( dv );
         }
 
