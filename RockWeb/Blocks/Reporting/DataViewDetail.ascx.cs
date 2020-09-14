@@ -1028,7 +1028,8 @@ $(document).ready(function() {
                 Name = dataView.Name,
                 TransformEntityTypeId = dataView.TransformEntityTypeId,
                 EntityTypeId = dataView.EntityTypeId,
-                DataViewFilter = dataView.DataViewFilter
+                DataViewFilter = dataView.DataViewFilter,
+                IncludeDeceased = dataView.IncludeDeceased
             };
 
             grid.DataSource = null;
