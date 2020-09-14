@@ -59,7 +59,7 @@
                             <Rock:RockTextBox
                                 ID="tbClientSecret"
                                 Required="true"
-                                Help="For security pruposes, we don't allow the secret to be displayed once created."
+                                Help="For security purposes, we don't allow the secret to be displayed once created."
                                 Label="Client Secret"
                                 runat="server"
                                 CssClass="form-group" />
