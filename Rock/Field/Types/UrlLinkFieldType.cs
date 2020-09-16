@@ -39,7 +39,7 @@ namespace Rock.Field.Types
             public const string ShouldRequireTrailingForwardSlash = "ShouldRequireTrailingForwardSlash";
 
             /// <summary>
-            /// The allows condense
+            /// The key for should always show condensed.
             /// </summary>
             public const string ShouldAlwaysShowCondensed = "ShouldAlwaysShowCondensed";
         }
@@ -76,7 +76,7 @@ namespace Rock.Field.Types
             controls.Add( cbShouldAlwaysShowCondensed );
             cbShouldAlwaysShowCondensed.AutoPostBack = true;
             cbShouldAlwaysShowCondensed.Label = "Should Always Show Condensed";
-            cbShouldAlwaysShowCondensed.Help = "When set, the URL always be returned as a raw value.";
+            cbShouldAlwaysShowCondensed.Help = "When set, the URL will always be returned as a raw value.";
 
             return controls;
         }
@@ -93,7 +93,7 @@ namespace Rock.Field.Types
                 "When set, the URL must end with a forward slash (/) to be valid.", "false" ) );
 
             configurationValues.Add( ConfigurationKey.ShouldAlwaysShowCondensed,
-                new ConfigurationValue( "Should Always Show Condensed", "When set, the URL always be returned as a raw value.", "false" ) );
+                new ConfigurationValue( "Should Always Show Condensed", "When set, the URL will always be returned as a raw value.", "false" ) );
 
             if ( controls != null && controls.Count == 2 )
             {
