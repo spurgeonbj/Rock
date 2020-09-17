@@ -45,14 +45,6 @@ namespace Rock.Jobs
 
             UpdateAttributeValues( commandTimeout );
 
-            var migrationHelper = new MigrationHelper( new JobMigration( commandTimeout ) );
-
-            migrationHelper.DropIndexIfExists( "Interaction", "IX_InteractionComponentId_InteractionDateTime" );
-
-            migrationHelper.CreateIndexIfNotExists( "Interaction",
-                new[] { "InteractionComponentId", "InteractionDateTime" },
-                new[] { "InteractionTimeToServe", "Operation", "InteractionSessionId" } );
-
             ServiceJobService.DeleteJob( context.GetJobId() );
         }
 
