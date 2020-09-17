@@ -50,9 +50,9 @@ namespace Rock.Jobs
 
         private void UpdateAttributeValues(int commandTimeout)
         {
-            var currentValue = @"{{ ''Global'' | Attribute:''PublicApplicationRoot'' }}/assessments?{{ Person.ImpersonationParameter }}";
+            var currentValue = @"{{ ''Global'' | Attribute:''PublicApplicationRoot'' }}/";
 
-            var newValue = @"{{ ''Global'' | Attribute:''PublicApplicationRoot'' }}assessments?{{ Person.ImpersonationParameter }}";
+            var newValue = @"{{ ''Global'' | Attribute:''PublicApplicationRoot'' }}";
 
             UpdateTableColumn( "AttributeValue", "Value", currentValue, newValue, commandTimeout );
         }
