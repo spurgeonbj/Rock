@@ -55,16 +55,15 @@ namespace Rock.Migrations
 		                    AND a.EntityTypeQualifierValue = ''
 		                    AND av.[EntityId] IS NULL" );
 
-            //UpdateAttributeValues();
             UpdateRegistrationTemplates();
             UpdateDefinedValues();
         }
 
         private void UpdateAttributeValues()
         {
-            var currentValue = @"{% capture assessmentsLink %}{{ ''Global'' | Attribute:''PublicApplicationRoot'' }}/assessments?{{ Person.ImpersonationParameter }}{% endcapture %}";
+            var currentValue = @"{{ ''Global'' | Attribute:''PublicApplicationRoot'' }}/assessments?{{ Person.ImpersonationParameter }}";
 
-            var newValue = @"{% capture assessmentsLink %}{{ ''Global'' | Attribute:''PublicApplicationRoot'' }}assessments?{{ Person.ImpersonationParameter }}{% endcapture %}";
+            var newValue = @"{{ ''Global'' | Attribute:''PublicApplicationRoot'' }}assessments?{{ Person.ImpersonationParameter }}";
 
             UpdateTableColumn( "AttributeValue", "Value", currentValue, newValue );
         }
@@ -108,7 +107,7 @@ namespace Rock.Migrations
         /// Operations to be performed during the downgrade process.
         /// </summary>
         public override void Down()
-        {
+        {   
         }
     }
 }
