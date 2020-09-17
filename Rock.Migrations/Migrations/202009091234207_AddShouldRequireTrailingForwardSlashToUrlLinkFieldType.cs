@@ -59,16 +59,6 @@ namespace Rock.Migrations
             UpdateDefinedValues();
         }
 
-        private void UpdateAttributeValues()
-        {
-            var currentValue = @"{{ ''Global'' | Attribute:''PublicApplicationRoot'' }}/assessments?{{ Person.ImpersonationParameter }}";
-
-            var newValue = @"{{ ''Global'' | Attribute:''PublicApplicationRoot'' }}assessments?{{ Person.ImpersonationParameter }}";
-
-            UpdateTableColumn( "AttributeValue", "Value", currentValue, newValue );
-        }
-
-
         private void UpdateRegistrationTemplates()
         {
             var currentValue = @"<a href=''{{ externalSite }}/Registration?RegistrationId={{ Registration.Id }}&rckipid={{ Registration.PersonAlias.Person | PersonTokenCreate }}''>";
