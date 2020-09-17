@@ -25,6 +25,8 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Web;
 using DotLiquid;
+using Rock.Bus;
+using Rock.Bus.Message;
 using Rock.Model;
 using Rock.Transactions;
 using Rock.UniversalSearch;
@@ -383,6 +385,13 @@ namespace Rock.Data
             List<ITransaction> indexTransactions = new List<ITransaction>();
             foreach ( var item in updatedItems )
             {
+                _ = RockMessageBus.PublishEntityUpdate( new EntityWasUpdatedMessage
+                {
+                    EntityTypeId = item.Entity.TypeId,
+                    EntityId = item.Entity.Id,
+                    EntityState = item.State
+                } );
+
                 if ( item.State == EntityState.Detached || item.State == EntityState.Deleted )
                 {
                     TriggerWorkflows( item, WorkflowTriggerType.PostDelete, personAlias );

@@ -17,6 +17,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
+using Rock.Bus;
+using Rock.Bus.Message;
 
 namespace Rock.Transactions
 {
@@ -65,6 +67,11 @@ namespace Rock.Transactions
                 {
                     continue;
                 }
+
+                _ = RockMessageBus.SendStartTask( new StartTaskMessage
+                {
+                    TaskName = CurrentlyExecutingTransaction.GetType().FullName
+                } );
 
                 try
                 {
