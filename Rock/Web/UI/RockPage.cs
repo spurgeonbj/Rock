@@ -919,7 +919,9 @@ namespace Rock.Web.UI
                     // Clear the session state cookie so it can be recreated as secured (see engineering note in Global.asax EndRequest)
                     SessionStateSection sessionState = ( SessionStateSection ) ConfigurationManager.GetSection( "system.web/sessionState" );
                     string sidCookieName = sessionState.CookieName; // ASP.NET_SessionId
-                    Response.Cookies[sidCookieName].Expires = DateTime.Now.AddDays( -1 );
+                    var cookie = Response.Cookies[sidCookieName];
+                    cookie.Expires = DateTime.Now.AddDays( -1 );
+                    AddOrUpdateCookie( cookie );
 
                     Response.Redirect( redirectUrl, false );
                     Context.ApplicationInstance.CompleteRequest();
@@ -2300,7 +2302,7 @@ Sys.Application.add_load(function () {
             contextCookie.Values[entityType.FullName] = HttpUtility.UrlDecode( entity.ContextKey );
             contextCookie.Expires = RockDateTime.Now.AddYears( 1 );
 
-            Response.Cookies.Add( contextCookie );
+            AddOrUpdateCookie( contextCookie );
 
             if ( refreshPage )
             {
@@ -2333,7 +2335,7 @@ Sys.Application.add_load(function () {
             contextCookie.Values[entityType.FullName] = null;
             contextCookie.Expires = RockDateTime.Now.AddYears( 1 );
 
-            Response.Cookies.Add( contextCookie );
+            AddOrUpdateCookie( contextCookie );
 
             if ( refreshPage )
             {
@@ -2391,7 +2393,9 @@ Sys.Application.add_load(function () {
                 HttpCookie httpCookie = Request.Cookies["rock_wifi"];
                 if ( LinkPersonAliasToDevice( ( int ) personAliasId, httpCookie.Values["ROCK_PERSONALDEVICE_ADDRESS"] ) )
                 {
-                    Response.Cookies["rock_wifi"].Expires = DateTime.Now.AddDays( -1 );
+                    var wiFiCookie = Response.Cookies["rock_wifi"];
+                    wiFiCookie.Expires = DateTime.Now.AddDays( -1 );
+                    AddOrUpdateCookie( wiFiCookie );
                 }
             }
         }
@@ -2412,7 +2416,7 @@ Sys.Application.add_load(function () {
         /// <param name="name">The name.</param>
         /// <param name="value">The value.</param>
         /// <param name="expirationDate">The expiration date.</param>
-        public static void CreateCookie( string name, string value, DateTime? expirationDate )
+        public static void AddOrUpdateCookie( string name, string value, DateTime? expirationDate )
         {
             var cookie = new HttpCookie( name )
             {
@@ -2420,14 +2424,15 @@ Sys.Application.add_load(function () {
                 Value = value
             };
 
-            CreateCookie( cookie );
+            AddOrUpdateCookie( cookie );
         }
 
         /// <summary>
         /// Creates/Overwrites the specified cookie using the global default for the SameSite setting.
+        /// Removes the cookie from the Request and Response, then adds it to the Response.
         /// </summary>
         /// <param name="cookie">The cookie.</param>
-        public static void CreateCookie( HttpCookie cookie )
+        public static void AddOrUpdateCookie( HttpCookie cookie )
         {
             // If the samesite setting is not in the Path then add it
             if ( cookie.Path.IsNullOrWhiteSpace() || !cookie.Path.Contains( "SameSite" ) )

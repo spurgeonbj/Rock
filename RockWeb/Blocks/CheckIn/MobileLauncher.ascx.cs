@@ -450,7 +450,7 @@ namespace RockWeb.Blocks.CheckIn
             // we want the SuccessBlock to generate a QR Code that contains the AttendanceSession(s)
             LocalDeviceConfig.GenerateQRCodeForAttendanceSessions = true;
 
-            RockPage.CreateCookie( CheckInCookieKey.LocalDeviceConfig, LocalDeviceConfig.ToJson( Newtonsoft.Json.Formatting.None ), RockDateTime.Now.AddYears( 1 ) );
+            RockPage.AddOrUpdateCookie( CheckInCookieKey.LocalDeviceConfig, LocalDeviceConfig.ToJson( Newtonsoft.Json.Formatting.None ), RockDateTime.Now.AddYears( 1 ) );
 
             // create new checkin state since we are starting a new checkin sessions
             this.CurrentCheckInState = new CheckInState( this.LocalDeviceConfig );
@@ -471,7 +471,7 @@ namespace RockWeb.Blocks.CheckIn
             if ( LocalDeviceConfig.CurrentTheme != theme )
             {
                 LocalDeviceConfig.CurrentTheme = theme;
-                RockPage.CreateCookie( CheckInCookieKey.LocalDeviceConfig, LocalDeviceConfig.ToJson( Newtonsoft.Json.Formatting.None ), RockDateTime.Now.AddYears( 1 ) );
+                RockPage.AddOrUpdateCookie( CheckInCookieKey.LocalDeviceConfig, LocalDeviceConfig.ToJson( Newtonsoft.Json.Formatting.None ), RockDateTime.Now.AddYears( 1 ) );
             }
 
             if ( !RockPage.Site.Theme.Equals( LocalDeviceConfig.CurrentTheme, StringComparison.OrdinalIgnoreCase ) )
@@ -549,7 +549,7 @@ namespace RockWeb.Blocks.CheckIn
                 bbtnGetGeoLocation.Visible = false;
                 HttpCookie rockHasLocationApprovalCookie = new HttpCookie( CheckInCookieKey.RockHasLocationApproval, "true" );
                 rockHasLocationApprovalCookie.Expires = RockDateTime.Now.AddYears( 1 );
-                Response.Cookies.Set( rockHasLocationApprovalCookie );
+                Rock.Web.UI.RockPage.AddOrUpdateCookie( rockHasLocationApprovalCookie );
 
                 device = GetFirstMatchingKioskByGeoFencing( latitude.Value, longitude.Value );
             }
@@ -569,7 +569,7 @@ namespace RockWeb.Blocks.CheckIn
             LocalDeviceConfig.CurrentKioskId = device.Id;
             LocalDeviceConfig.AllowCheckout = false;
 
-            RockPage.CreateCookie( CheckInCookieKey.LocalDeviceConfig, LocalDeviceConfig.ToJson( Newtonsoft.Json.Formatting.None ), RockDateTime.Now.AddYears( 1 ) );
+            RockPage.AddOrUpdateCookie( CheckInCookieKey.LocalDeviceConfig, LocalDeviceConfig.ToJson( Newtonsoft.Json.Formatting.None ), RockDateTime.Now.AddYears( 1 ) );
 
             // create new checkin state since we are starting a new checkin sessions
             this.CurrentCheckInState = new CheckInState( this.LocalDeviceConfig );

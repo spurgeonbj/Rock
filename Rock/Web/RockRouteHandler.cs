@@ -627,7 +627,7 @@ namespace Rock.Web
         /// <param name="siteCookie">The siteCookie.</param>
         private void CreateOrUpdateSiteCookie( HttpCookie siteCookie, RequestContext routeRequestContext, PageCache page )
         {
-            Rock.Web.UI.RockPage.CreateCookie( "last_site", page.Layout.SiteId.ToString(), null );
+            Rock.Web.UI.RockPage.AddOrUpdateCookie( "last_site", page.Layout.SiteId.ToString(), null );
         }
 
         /// <summary>

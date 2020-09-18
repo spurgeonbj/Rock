@@ -91,7 +91,11 @@ namespace Rock.Web.Cache
             {
                 var httpContext = HttpContext.Current;
                 var request = httpContext?.Request;
-                if ( request == null ) return ConfiguredTheme;
+
+                if ( request == null )
+                {
+                    return ConfiguredTheme;
+                }
 
                 var cookieName = $"Site:{ Id }:theme";
                 var cookie = request.Cookies[cookieName];
@@ -113,8 +117,7 @@ namespace Rock.Web.Cache
                                 cookie.Value = theme;
                             }
 
-                            httpContext.Response.SetCookie( cookie );
-
+                            Rock.Web.UI.RockPage.AddOrUpdateCookie( cookie );
                             return theme;
                         }
                     }
@@ -125,18 +128,19 @@ namespace Rock.Web.Cache
                         {
                             cookie.Expires = RockDateTime.Now.AddDays( -10 );
                             cookie.Value = null;
-                            httpContext.Response.SetCookie( cookie );
+                            Rock.Web.UI.RockPage.AddOrUpdateCookie( cookie );
                             return ConfiguredTheme;
                         }
                     }
                 }
 
-                if ( cookie == null ) return ConfiguredTheme;
-
-                theme = cookie.Value;
+                if ( cookie == null )
+                {
+                    return ConfiguredTheme;
+                }
 
                 // Don't allow switching to an invalid theme
-                if ( System.IO.Directory.Exists( httpContext.Server.MapPath( "~/Themes/" + theme ) ) )
+                if ( System.IO.Directory.Exists( httpContext.Server.MapPath( "~/Themes/" + cookie.Value ) ) )
                 {
                     return cookie.Value;
                 }
@@ -144,7 +148,7 @@ namespace Rock.Web.Cache
                 // Delete the invalid cookie
                 cookie.Expires = RockDateTime.Now.AddDays( -10 );
                 cookie.Value = null;
-                httpContext.Response.SetCookie( cookie );
+                Rock.Web.UI.RockPage.AddOrUpdateCookie( cookie );
 
                 return ConfiguredTheme;
             }

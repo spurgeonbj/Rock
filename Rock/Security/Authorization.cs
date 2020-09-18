@@ -790,7 +790,7 @@ namespace Rock.Security
                 authCookie.Expires = ticket.Expiration;
             }
 
-            RockPage.CreateCookie( authCookie );
+            RockPage.AddOrUpdateCookie( authCookie );
 
             // If cookie is for a more generic domain, we need to store that domain so that we can expire it correctly 
             // when the user signs out.
@@ -809,7 +809,7 @@ namespace Rock.Security
                     Expires = authCookie.Expires
                 };
 
-            RockPage.CreateCookie( domainCookie );
+            RockPage.AddOrUpdateCookie( domainCookie );
         }
 
         /// <summary>
@@ -818,15 +818,17 @@ namespace Rock.Security
         public static void SignOut()
         {
             ExpireUnsecuredPersonIdentifierCookie();
-            var domainCookie = HttpContext.Current.Request.Cookies[$"{FormsAuthentication.FormsCookieName}_DOMAIN"];
+
+            var domainCookieName = $"{FormsAuthentication.FormsCookieName}_DOMAIN";
+            var domainCookie = HttpContext.Current.Request.Cookies[domainCookieName];
+
             if ( domainCookie != null )
             {
                 var authCookie = GetAuthCookie( domainCookie.Value, null );
                 authCookie.Expires = DateTime.Now.AddDays( -1d );
-                HttpContext.Current.Response.Cookies.Remove( FormsAuthentication.FormsCookieName );
-                HttpContext.Current.Response.Cookies.Add( authCookie );
+                RockPage.AddOrUpdateCookie( authCookie );
 
-                domainCookie = new HttpCookie( $"{FormsAuthentication.FormsCookieName}_DOMAIN" )
+                domainCookie = new HttpCookie( domainCookieName )
                 {
                     HttpOnly = true,
                     Domain = authCookie.Domain,
@@ -834,8 +836,9 @@ namespace Rock.Security
                     Secure = FormsAuthentication.RequireSSL,
                     Expires = DateTime.Now.AddDays( -1d )
                 };
-                HttpContext.Current.Response.Cookies.Remove( $"{FormsAuthentication.FormsCookieName}_DOMAIN" );
-                HttpContext.Current.Response.Cookies.Add( domainCookie );
+
+                RockPage.AddOrUpdateCookie( domainCookie );
+
             }
             else
             {
@@ -851,7 +854,7 @@ namespace Rock.Security
         {
             if ( HttpContext.Current.Request.Cookies.AllKeys.Contains( Rock.Security.Authorization.COOKIE_UNSECURED_PERSON_IDENTIFIER ) )
             {
-                RockPage.CreateCookie( Rock.Security.Authorization.COOKIE_UNSECURED_PERSON_IDENTIFIER, null, RockDateTime.Now.AddDays( -1d ) );
+                RockPage.AddOrUpdateCookie( Rock.Security.Authorization.COOKIE_UNSECURED_PERSON_IDENTIFIER, null, RockDateTime.Now.AddDays( -1d ) );
             }
         }
 
@@ -939,8 +942,9 @@ namespace Rock.Security
             HttpCookie httpcookie = new HttpCookie( Rock.Security.Authorization.COOKIE_UNSECURED_PERSON_IDENTIFIER );
             httpcookie.Value = personAliasGuid.ToString();
             httpcookie.Expires = DateTime.Now.AddYears( 1 );
-            HttpContext.Current.Response.Cookies.Add( httpcookie );
+            RockPage.AddOrUpdateCookie( httpcookie );
         }
+
         #endregion
 
         #region Private Methods

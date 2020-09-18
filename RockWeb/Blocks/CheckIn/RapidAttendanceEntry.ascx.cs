@@ -1343,7 +1343,7 @@ namespace RockWeb.Blocks.CheckIn
             httpcookie.Values.Add( LOCATION_ID, attendanceSetting.GroupLocationId.ToString() );
             httpcookie.Values.Add( SCHEDULE_ID, attendanceSetting.ScheduleId.ToString() );
             httpcookie.Values.Add( ATTENDANCE_DATE, attendanceSetting.AttendanceDate.ToString() );
-            Response.Cookies.Add( httpcookie );
+            Rock.Web.UI.RockPage.AddOrUpdateCookie( httpcookie );
         }
 
         /// <summary>
