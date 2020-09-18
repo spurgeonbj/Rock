@@ -1,0 +1,9 @@
+{% if AllowedActions.View == true or AllowedActions.Edit == true or AllowedActions.Administrate == true %}
+
+
+
+{% else %}
+	{% if Group.Id %}
+		<div class='alert alert-warning'>You do not have permission to view this person.</div>
+	{% endif %}
+{% endif %}
