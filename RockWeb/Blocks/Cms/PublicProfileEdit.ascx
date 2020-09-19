@@ -20,7 +20,7 @@
 
                 <%-- View Panel --%>
                 <asp:Panel ID="pnlView" CssClass="panel-view" runat="server">
-                    <asp:Literal ID="lContent" runat="server" />
+                    <asp:Literal ID="lViewPersonContent" runat="server" />
                 </asp:Panel>
 
 

@@ -1,9 +1,130 @@
-{% if AllowedActions.View == true or AllowedActions.Edit == true or AllowedActions.Administrate == true %}
+{%- comment -%}
+    This is the default lava template for the PublicProfileEdit block
+    Available Lava Fields:
 
+    ViewOnly - If this is true, the Edit button should not be visible
+    CurrentPerson - The Person that we are viewing (and the person that is logged in)
+    Family - (Rock.Model.Group) The family that is currently selected (the person could be in multiple families).
+    ShowFamilyMembers - If this is true, family members should be listed
+    FamilyMembers -  (List of Rock.Model.GroupMember) The family members (of the selected family)
+    Families = (List of Rock.Model.Group) The families that this person is in.
 
+    AddressTypeValue - (DefinedValueCache) The address type defined value that is displayed.
+    Address = (Rock.Model.GroupLocation) The address to be displayed.
 
-{% else %}
-	{% if Group.Id %}
-		<div class='alert alert-warning'>You do not have permission to view this person.</div>
-	{% endif %}
-{% endif %}
+    ShowPhoneNumbers - If this is true, phone numbers should be shown
+    PhoneNumbers (List of Rock.Model.PhoneNumber)) - The phone numbers that can be displayed
+    DisplayedPhoneTypeValues - (List of DefinedValueCache) - The Phone Types that should be shown
+
+    RequestChangesPageUrl - The URL to use when they press the Request Changes button
+    RequestChangesText - The text to shown on the Request Changes button
+
+    FamilyAttributes - (List of AttributeCache) - The family attributes that should be displayed.
+    PersonAttributes - (List of AttributeCache) - The person attributes that should be displayed
+{%- endcomment -%}
+
+<div class="panel-view" style='border-color:Blue;border-width:5px;border-style:Solid;'>
+    <!-- Person Info -->
+    <div class="row">
+        <!-- Photo -->
+        <div class="col-sm-3">
+            <div class="photo">
+                <a href="/GetImage.ashx?id={{ CurrentPerson.PhotoId }}" class="fluidbox">
+                    <div class="fluidbox-wrap">
+                        <img src="/GetImage.ashx?id={{ CurrentPerson.PhotoId }}&amp;maxwidth=200&amp;maxheight=200" style="opacity: 1;">
+                        <div class="fluidbox-ghost" style="width: 186.875px; height: 186.875px; top: 0px; left: 0px;">
+                        </div>
+                    </div>
+                </a>
+            </div>
+       </div>
+
+        <div class="col-sm-9">
+            <!-- Person Name, and dropdown of families (if more than 1) -->
+            <h1 class="title name">
+                {{ CurrentPerson.FullName }}
+                {% assign familyCount = Families | Size %}
+                {% if familyCount > 1 %}
+                    <div class="pull-right">
+
+                        <select name="selectFamily" onchange="{{ Family.Id | Postback:'SelectFamily' }}"  class="form-control">
+                            <option value="{{ Family.Id }}" selected="selected">{{ Family.Name }}</option>
+                            {% for family in Families %}
+                                {% if family.Id != Family.Id %}
+                                    <option value="{{ family.Id }}" >{{ family.Name }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% endif %}
+            </h1>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <ul class="person-demographics list-unstyled">
+                        <li>
+                            {% if CurrentPerson.Age %}
+                                {{ CurrentPerson.Age  }} yrs old <small>({{ CurrentPerson.BirthDate | Date:'sd' }})</small><br>
+                            {% endif %}
+                        </li>
+                        <li>
+                            {{ CurrentPerson.Gender }}
+                        </li>
+                        <li>
+                            {% if CurrentPerson.MaritalStatusValueId %}
+                                {% assign maritalStatusValue = CurrentPerson.MaritalStatusValueId | FromCache:'DefinedValue' %}
+                                {% if CurrentPerson.AnniversaryDate %}
+                                    {% assign marriedYears = CurrentPerson.AnniversaryDate | DateDiff:CurrentPerson.NextAnniversary,'Y' | Minus:1 %}
+                                    {% assign marriedDate = CurrentPerson.AnniversaryDate | Date:'M/d' %}
+                                    {{ maritalStatusValue.Value }} {{marriedYears}} yrs <small>({{ marriedDate }})</small>
+                                {% else %}
+                                    {{ maritalStatusValue }}
+                                {% endif %}
+                            {% endif %}
+                        </li>
+                        <li>
+                            {{ CurrentPerson.GradeFormatted }}
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    {% if ShowPhoneNumbers %}
+                        <ul class="phone-list list-unstyled">
+                        {% for phoneNumber in PhoneNumbers %}
+                            {% assign numberTypeValue = phoneNumber.NumberTypeValueId | FromCache:'DefinedValue' %}
+                            <li>{% if phoneNumber.IsUnlisted %}Unlisted{%else%}{{ phoneNumber.NumberFormatted }}{%endif%} <small>{{ numberTypeValue.Value }}</small></li>
+                        {% endfor %}
+                        </ul>
+                    {% endif %}
+
+                    {{ CurrentPerson.Email}}
+                </div>
+            </div>
+
+            {% if Address %}
+                <div class="margin-b-md"><b>{{ AddressTypeValue.Value }} Address</b><br>{{ Address.Location.FormattedHtmlAddress }}</div>
+            {% endif %}
+
+            {% if PersonAttributes %}
+                <div class="row">
+                {%- comment -%}loop thru Attributes so we can get the attribute value without checking security{%- endcomment -%}
+                {% for personAttribute in PersonAttributes %}
+                    {% for attribute in CurrentPerson.AttributeValues %}
+                        {% if attribute.AttributeKey == personAttribute.Key %}
+                            {% if attribute.ValueFormatted != '' %}
+                            <div class="col-md-6">
+                                <b>{{ attribute.AttributeName }}</b><br><small> {{ attribute.ValueFormatted }}</small>
+                            </div>
+                            {%endif%}
+                        {%endif%}
+                    {% endfor %}
+                {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+     <!-- Family Info -->
+    <h3>
+</div>
+
