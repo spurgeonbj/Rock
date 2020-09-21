@@ -157,6 +157,11 @@ namespace Rock.SystemKey
         public const string COMMUNICATION_SETTING_APPROVAL_TEMPLATE = "core_CommunicationSettingApprovalTemplate";
 
         /// <summary>
+        /// Enable Cache Manager statistics and performance counters.
+        /// </summary>
+        public const string CACHE_MANAGER_ENABLE_STATISTICS = "CacheManagerEnableStatistics";
+
+        /// <summary>
         /// Settings for Do Not Disturb Start
         /// </summary>
         [Obsolete( "This functionality is no longer used." )]
@@ -176,5 +181,15 @@ namespace Rock.SystemKey
         [Obsolete( "This functionality is no longer used." )]
         [RockObsolete( "1.9" )]
         public const string DO_NOT_DISTURB_ACTIVE = "core_DoNotDisturbActive";
+
+        /// <summary>
+        /// The open id connect RSA keys
+        /// </summary>
+        public const string OPEN_ID_CONNECT_RSA_KEYS = "OpenIdConnectRsaKeys";
+
+        /// <summary>
+        /// The open identifier connect settings
+        /// </summary>
+        public const string OPEN_ID_CONNECT_SETTINGS = "OpenIdConnectSettings";
     }
 }

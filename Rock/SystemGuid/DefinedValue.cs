@@ -34,6 +34,16 @@ namespace Rock.SystemGuid
         public const string BLOCK_TEMPLATE_MOBILE_CALENDAR_EVENT_ITEM_OCCURRENCE_VIEW = "128F7350-97FD-4ECA-9C79-D02DE0C434EB";
 
         /// <summary>
+        /// The block template for the mobile communication view
+        /// </summary>
+        public const string BLOCK_TEMPLATE_MOBILE_COMMUNICATION_VIEW = "0D588D84-111C-4350-98DE-460C194F5DE5";
+
+        /// <summary>
+        /// The block template mobile event item occurrence list by audience
+        /// </summary>
+        public const string BLOCK_TEMPLATE_MOBILE_EVENT_ITEM_OCCURRENCE_LIST_BY_AUDIENCE = "26944B71-7B69-4943-8EC2-3506F728D943";
+
+        /// <summary>
         /// The block template for the mobile group member list.
         /// </summary>
         public const string BLOCK_TEMPLATE_MOBILE_GROUP_MEMBER_LIST = "E5618730-9E50-4BDA-9E13-D27697F83980";

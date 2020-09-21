@@ -45,12 +45,10 @@ namespace Rock.Utility
             var connectionRequestService = new ConnectionRequestService( rockContext );
             var entitySetService = new Rock.Model.EntitySetService( rockContext );
 
-            var errorMessages = new List<string>();
-
             var connectionOpportunity = connectionOpportunityService.Get( campaignConfiguration.OpportunityGuid );
 
             // list of person on the basis of Dataview result and optout group.
-            var filteredPersonIds = GetFilteredPersonIds( campaignConfiguration, rockContext, out errorMessages );
+            var filteredPersonIds = GetFilteredPersonIds( campaignConfiguration, rockContext );
 
             // get the last connection datetime.
             var lastConnectionDateTime = RockDateTime.Now.AddDays( -campaignConfiguration.DaysBetweenConnection );
@@ -257,18 +255,16 @@ namespace Rock.Utility
         /// </summary>
         /// <param name="campaignConfiguration">The campaign configuration.</param>
         /// <param name="rockContext">The rock context.</param>
-        /// <param name="errorMessages">The error messages.</param>
         /// <returns></returns>
-        private static List<int> GetFilteredPersonIds( CampaignItem campaignConfiguration, RockContext rockContext, out List<string> errorMessages )
+        private static List<int> GetFilteredPersonIds( CampaignItem campaignConfiguration, RockContext rockContext )
         {
-            errorMessages = new List<string>();
-
             var dataView = new DataViewService( rockContext ).Get( campaignConfiguration.DataViewGuid );
             var personService = new PersonService( rockContext );
 
             var filteredPersonIds = new List<int>();
-            var personQuery = dataView.GetQuery( null, rockContext, null, out errorMessages )
-                .OfType<Rock.Model.Person>();
+
+            var dataViewGetQueryArgs = new DataViewGetQueryArgs();
+            var personQuery = dataView.GetQuery( dataViewGetQueryArgs ).OfType<Rock.Model.Person>();
 
             if ( campaignConfiguration.FamilyLimits == FamilyLimits.HeadOfHouse )
             {

@@ -29,8 +29,8 @@ namespace Rock.Plugin.HotFixes
         /// </summary>
         public override void Up()
         {
-            UpdatePersonMergeSproc();
-            UpdateOrphanedDocuments();
+            //UpdatePersonMergeSproc();
+            //UpdateOrphanedDocuments();
         }
 
         /// <summary>

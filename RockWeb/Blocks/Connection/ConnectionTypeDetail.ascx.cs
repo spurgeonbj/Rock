@@ -431,6 +431,8 @@ namespace RockWeb.Blocks.Connection
                     connectionType.EnableFullActivityList = cbFullActivityList.Checked;
                     connectionType.RequiresPlacementGroupToConnect = cbRequiresPlacementGroup.Checked;
                     connectionType.EnableRequestSecurity = cbEnableRequestSecurity.Checked;
+                    connectionType.ConnectionRequestDetailPageId = ppConnectionRequestDetail.PageId;
+                    connectionType.ConnectionRequestDetailPageRouteId = ppConnectionRequestDetail.PageRouteId;
 
                     foreach ( var connectionActivityTypeState in ActivityTypesState )
                     {
@@ -1560,6 +1562,15 @@ namespace RockWeb.Blocks.Connection
             cbEnableRequestSecurity.Checked = connectionType.EnableRequestSecurity;
             cbFullActivityList.Checked = connectionType.EnableFullActivityList;
             cbFutureFollowUp.Checked = connectionType.EnableFutureFollowup;
+
+            if ( connectionType.ConnectionRequestDetailPageRoute != null )
+            {
+                ppConnectionRequestDetail.SetValue( connectionType.ConnectionRequestDetailPageRoute );
+            }
+            else
+            {
+                ppConnectionRequestDetail.SetValue( connectionType.ConnectionRequestDetailPage );
+            }
 
             ActivityTypesState = connectionType.ConnectionActivityTypes.ToList();
             WorkflowsState = connectionType.ConnectionWorkflows.ToList();

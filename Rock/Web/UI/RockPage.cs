@@ -1039,6 +1039,12 @@ namespace Rock.Web.UI
                                 {
                                     ModelContext.AddOrReplace( modelContextName, new Data.KeyEntity( contextId.Value ) );
                                 }
+
+                                Guid? contextGuid = PageParameter( type.Name + "Guid" ).AsGuidOrNull();
+                                if ( contextGuid.HasValue )
+                                {
+                                    ModelContext.AddOrReplace( modelContextName, new Data.KeyEntity( contextGuid.Value ) );
+                                }
                             }
                         }
 
@@ -1049,6 +1055,12 @@ namespace Rock.Web.UI
                             if ( contextId.HasValue )
                             {
                                 ModelContext.AddOrReplace( pageContext.Key, new Data.KeyEntity( contextId.Value ) );
+                            }
+
+                            Guid? contextGuid = PageParameter( pageContext.Value ).AsGuidOrNull();
+                            if ( contextGuid.HasValue )
+                            {
+                                ModelContext.AddOrReplace( pageContext.Key, new Data.KeyEntity( contextGuid.Value ) );
                             }
                         }
 
@@ -1538,48 +1550,20 @@ namespace Rock.Web.UI
             }
         }
 
-
         /// <summary>
-        /// The verify block type instance properties lock object
-        /// </summary>
-        private static readonly object _verifyBlockTypeInstancePropertiesLockObj = new object();
-
-        /// <summary>
-        /// Verifies the block type instance properties.
+        /// Verifies the block type instance properties to make sure they are compiled and have the attributes updated.
         /// </summary>
         private void VerifyBlockTypeInstanceProperties()
         {
-            var blockTypesIdToVerify = _pageCache.Blocks.Select( a => a.BlockType ).Distinct().Where( a => a.IsInstancePropertiesVerified == false ).Select( a => a.Id ).ToList();
-            foreach ( int blockTypeId in blockTypesIdToVerify )
+            var blockTypesIdToVerify = _pageCache.Blocks.Select( a => a.BlockType ).Distinct().Where( a => a.IsInstancePropertiesVerified == false ).Select( a => a.Id );
+
+            if ( !blockTypesIdToVerify.Any() )
             {
-                Page.Trace.Warn( "\tCreating block attributes" );
-
-                try
-                {
-                    if ( BlockTypeCache.Get( blockTypeId )?.IsInstancePropertiesVerified == false )
-                    {
-                        // make sure that only one thread is trying to compile block properties so that we don't get collisions and unneeded compiler overhead
-                        lock ( _verifyBlockTypeInstancePropertiesLockObj )
-                        {
-                            if ( BlockTypeCache.Get( blockTypeId )?.IsInstancePropertiesVerified == false )
-                            {
-                                using ( var rockContext = new RockContext() )
-                                {
-                                    var blockTypeCache = BlockTypeCache.Get( blockTypeId );
-                                    Type blockCompiledType = blockTypeCache.GetCompiledType();
-
-                                    bool attributesUpdated = RockBlock.CreateAttributes( rockContext, blockCompiledType, blockTypeId );
-                                    BlockTypeCache.Get( blockTypeId )?.MarkInstancePropertiesVerified( true );
-                                }
-                            }
-                        }
-                    }
-                }
-                catch
-                {
-                    // ignore if the block couldn't be compiled, it'll get logged and shown when the page tries to load the block into the page
-                }
+                return;
             }
+
+            Page.Trace.Warn( "\tCreating block attributes" );
+            BlockTypeService.VerifyBlockTypeInstanceProperties( blockTypesIdToVerify.ToArray() );
         }
 
         /// <summary>
@@ -2149,7 +2133,7 @@ Sys.Application.add_load(function () {
                 return string.Format( "{0}://{1}{2}", protocol, Context.Request.Url.Authority, virtualPath );
             }
 
-            return GlobalAttributesCache.Get().GetValue( "PublicApplicationRoot" ).EnsureTrailingForwardslash() + virtualPath.RemoveLeadingForwardslash();
+            return GlobalAttributesCache.Get().GetValue( "PublicApplicationRoot" ) + virtualPath.RemoveLeadingForwardslash();
         }
 
         /// <summary>
@@ -2207,9 +2191,9 @@ Sys.Application.add_load(function () {
                 {
                     if ( entity.Name.Equals( "Rock.Model.Person", StringComparison.OrdinalIgnoreCase ) )
                     {
-                        if ( string.IsNullOrWhiteSpace( keyModel.Key ) )
+                        if ( keyModel.Id.HasValue || keyModel.Guid.HasValue )
                         {
-                            keyModel.Entity = new PersonService( new RockContext() )
+                            var qry = new PersonService( new RockContext() )
                                 .Queryable( true, true )
                                 .Include( p => p.MaritalStatusValue )
                                 .Include( p => p.ConnectionStatusValue )
@@ -2220,10 +2204,20 @@ Sys.Application.add_load(function () {
                                 .Include( p => p.TitleValue )
                                 .Include( p => p.GivingGroup )
                                 .Include( p => p.Photo )
-                                .Include( p => p.Aliases )
-                                .Where( p => p.Id == keyModel.Id ).FirstOrDefault();
+                                .Include( p => p.Aliases );
+
+                            if ( keyModel.Id.HasValue )
+                            {
+                                qry = qry.Where( p => p.Id == keyModel.Id.Value );
+                            }
+                            else
+                            {
+                                qry = qry.Where( p => p.Guid == keyModel.Guid.Value );
+                            }
+
+                            keyModel.Entity = qry.FirstOrDefault();
                         }
-                        else
+                        else if ( keyModel.Key.IsNotNullOrWhiteSpace() )
                         {
                             keyModel.Entity = new PersonService( new RockContext() ).GetByPublicKey( keyModel.Key );
                         }
@@ -2250,12 +2244,17 @@ Sys.Application.add_load(function () {
                             System.Data.Entity.DbContext dbContext = Reflection.GetDbContextForEntityType( modelType );
                             IService serviceInstance = Reflection.GetServiceForEntityType( modelType, dbContext );
 
-                            if ( string.IsNullOrWhiteSpace( keyModel.Key ) )
+                            if ( keyModel.Id.HasValue )
                             {
                                 MethodInfo getMethod = serviceInstance.GetType().GetMethod( "Get", new Type[] { typeof( int ) } );
                                 keyModel.Entity = getMethod.Invoke( serviceInstance, new object[] { keyModel.Id } ) as Rock.Data.IEntity;
                             }
-                            else
+                            else if ( keyModel.Guid.HasValue )
+                            {
+                                MethodInfo getMethod = serviceInstance.GetType().GetMethod( "Get", new Type[] { typeof( Guid ) } );
+                                keyModel.Entity = getMethod.Invoke( serviceInstance, new object[] { keyModel.Guid } ) as Rock.Data.IEntity;
+                            }
+                            else if ( keyModel.Key.IsNotNullOrWhiteSpace() )
                             {
                                 MethodInfo getMethod = serviceInstance.GetType().GetMethod( "GetByPublicKey" );
                                 keyModel.Entity = getMethod.Invoke( serviceInstance, new object[] { keyModel.Key } ) as Rock.Data.IEntity;
@@ -2793,6 +2792,25 @@ Sys.Application.add_load(function () {
             {
                 parameters.Add( key, Page.RouteData.Values[key] );
             }
+
+            foreach ( string param in Request.QueryString.Keys )
+            {
+                if ( param != null )
+                {
+                    parameters.Add( param, Request.QueryString[param] );
+                }
+            }
+
+            return parameters;
+        }
+
+        /// <summary>
+        /// Gets the page route and query string parameters.
+        /// </summary>
+        /// <returns>A case-insensitive <see cref="System.Collections.Generic.Dictionary{String, Object}"/> containing the page route and query string values, where the Key is the parameter name and the object is the value.</returns>
+        public Dictionary<string, object> QueryParameters()
+        {
+            var parameters = new Dictionary<string, object>( StringComparer.OrdinalIgnoreCase );
 
             foreach ( string param in Request.QueryString.Keys )
             {
