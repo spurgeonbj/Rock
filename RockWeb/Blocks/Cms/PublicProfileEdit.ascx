@@ -3,12 +3,6 @@
 <asp:UpdatePanel ID="upContent" runat="server">
     <ContentTemplate>
 
-        <script>
-            $(function () {
-                $(".photo a").fluidbox();
-            });
-        </script>
-
         <div class="panel panel-block">
             <div class="panel-heading">
                 <h1 class="panel-title"><i class="fa fa-user"></i>&nbsp;My Account</h1>
@@ -23,9 +17,7 @@
                     <asp:Literal ID="lViewPersonContent" runat="server" />
                 </asp:Panel>
 
-
                 <asp:HiddenField ID="hfEditPersonGuid" runat="server" />
-
 
                 <%-- Edit Panel --%>
                 <asp:Panel ID="pnlEdit" runat="server">

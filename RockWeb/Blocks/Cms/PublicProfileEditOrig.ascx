@@ -5,7 +5,7 @@
 
         <script>
             $(function () {
-                $(".photo a").fluidbox();
+                //$(".photo a").fluidbox();
             });
         </script>
 

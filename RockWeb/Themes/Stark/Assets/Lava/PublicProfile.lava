@@ -4,38 +4,39 @@
 
     ViewOnly - If this is true, the Edit button should not be visible
     CurrentPerson - The Person that we are viewing (and the person that is logged in)
-    Family - (Rock.Model.Group) The family that is currently selected (the person could be in multiple families).
+    Family - (Rock.Model.Group) The family that is currently selected (the person could be in multiple families)
     ShowFamilyMembers - If this is true, family members should be listed
-    FamilyMembers -  (List of Rock.Model.GroupMember) The family members (of the selected family)
-    Families = (List of Rock.Model.Group) The families that this person is in.
+    FamilyMembers -  (List of Rock.Model.GroupMember) The family members (of the selected family), not including the currentperson
+    Families = (List of Rock.Model.Group) The families that this person is in
 
-    AddressTypeValue - (DefinedValueCache) The address type defined value that is displayed.
-    Address = (Rock.Model.GroupLocation) The address to be displayed.
+    AddressTypeValueId - (DefinedValueCache Id) The address type defined value Id that is displayed
+    Address = (Rock.Model.GroupLocation) The address to be displayed
 
     ShowPhoneNumbers - If this is true, phone numbers should be shown
     PhoneNumbers (List of Rock.Model.PhoneNumber)) - The phone numbers that can be displayed
-    DisplayedPhoneTypeValues - (List of DefinedValueCache) - The Phone Types that should be shown
+    DisplayedPhoneTypeValueIds - (List of DefinedValueCache Ids) - The Phone Type defined values ids that should be shown
 
     RequestChangesPageUrl - The URL to use when they press the Request Changes button
     RequestChangesText - The text to shown on the Request Changes button
 
-    FamilyAttributes - (List of AttributeCache) - The family attributes that should be displayed.
-    PersonAttributes - (List of AttributeCache) - The person attributes that should be displayed
+    FamilyAttributes - (List of AttributeCache) - The family attributes that should be displayed
+    PersonAttributesAdults - (List of AttributeCache) - The person attributes that should be displayed for Adults
+    PersonAttributesChildren - (List of AttributeCache) - The person attributes that should be displayed for Children
 {%- endcomment -%}
+
+<script>
+    $(function () {
+        $(".js-personphoto a").fluidbox();
+    });
+</script>
 
 <div class="panel-view" style='border-color:Blue;border-width:5px;border-style:Solid;'>
     <!-- Person Info -->
     <div class="row">
         <!-- Photo -->
         <div class="col-sm-3">
-            <div class="photo">
-                <a href="/GetImage.ashx?id={{ CurrentPerson.PhotoId }}" class="fluidbox">
-                    <div class="fluidbox-wrap">
-                        <img src="/GetImage.ashx?id={{ CurrentPerson.PhotoId }}&amp;maxwidth=200&amp;maxheight=200" style="opacity: 1;">
-                        <div class="fluidbox-ghost" style="width: 186.875px; height: 186.875px; top: 0px; left: 0px;">
-                        </div>
-                    </div>
-                </a>
+            <div class="photo js-personphoto">
+                <a href='{{ CurrentPerson.PhotoUrl }}'><img src='{{ CurrentPerson.PhotoUrl }}&maxwidth=200&maxheight=200'/></a>
             </div>
        </div>
 
@@ -90,9 +91,11 @@
                 <div class="col-md-6">
                     {% if ShowPhoneNumbers %}
                         <ul class="phone-list list-unstyled">
-                        {% for phoneNumber in PhoneNumbers %}
+                        {% for phoneNumber in CurrentPerson.PhoneNumbers %}
                             {% assign numberTypeValue = phoneNumber.NumberTypeValueId | FromCache:'DefinedValue' %}
-                            <li>{% if phoneNumber.IsUnlisted %}Unlisted{%else%}{{ phoneNumber.NumberFormatted }}{%endif%} <small>{{ numberTypeValue.Value }}</small></li>
+                            {% if DisplayedPhoneTypeValueIds | Contains:numberTypeValue.Id %}
+                                <li>{% if phoneNumber.IsUnlisted %}Unlisted{%else%}{{ phoneNumber.NumberFormatted }}{%endif%} <small>{{ numberTypeValue.Value }}</small></li>
+                            {% endif %}
                         {% endfor %}
                         </ul>
                     {% endif %}
@@ -102,15 +105,58 @@
             </div>
 
             {% if Address %}
-                <div class="margin-b-md"><b>{{ AddressTypeValue.Value }} Address</b><br>{{ Address.Location.FormattedHtmlAddress }}</div>
+                {% assign addressTypeValue = AddressTypeValueId | FromCache:'DefinedValue' %}
+                <div class="margin-b-md"><b>{{ addressTypeValue.Value }} Address</b><br>{{ Address.Location.FormattedHtmlAddress }}</div>
             {% endif %}
 
-            {% if PersonAttributes %}
+            {% if CurrentPerson.AgeClassification == 'Child' %}
+                {% assign personAttributes = PersonAttributesChildren %}
+            {% else %}
+                {% assign personAttributes = PersonAttributesAdults %}
+            {% endif %}
+
+            {% if personAttributes %}
                 <div class="row">
                 {%- comment -%}loop thru Attributes so we can get the attribute value without checking security{%- endcomment -%}
-                {% for personAttribute in PersonAttributes %}
-                    {% for attribute in CurrentPerson.AttributeValues %}
-                        {% if attribute.AttributeKey == personAttribute.Key %}
+                {%- for personAttribute in personAttributes -%}
+                    {%- for attribute in CurrentPerson.AttributeValues -%}
+                        {%- if attribute.AttributeKey == personAttribute.Key -%}
+                            {%- if attribute.ValueFormatted != '' -%}
+                            <div class="col-md-6">
+                                <b>{{ attribute.AttributeName }}</b><br><small> {{ attribute.ValueFormatted }}</small>
+                            </div>
+                            {%-endif-%}
+                        {%-endif-%}
+                    {%- endfor -%}
+                {%- endfor -%}
+                </div>
+            {% endif %}
+
+
+            {%- comment -%}loop thru Attributes to see if there are any non-blank ones{%- endcomment%}
+            {% assign showFamilyAttributes = false %}
+            {% for familyAttribute in FamilyAttributes %}
+                {% for attribute in Family.AttributeValues %}
+                    {% if attribute.AttributeKey == familyAttribute.Key %}
+                        {% if attribute.ValueFormatted != '' %}
+                            {% assign showFamilyAttributes = true %}
+                            {% break %}
+                        {%endif%}
+                    {%endif%}
+                {% endfor %}
+            {% endfor %}
+
+            {% if showFamilyAttributes == true %}
+                <div class="row">
+
+                <div class="col-md-12">
+                    <h4>Family Information</h4>
+                </div>
+
+                {%- comment -%}loop thru Attributes so we can get the attribute value without checking security{%- endcomment -%}
+                {% for familyAttribute in FamilyAttributes %}
+                    {% for attribute in Family.AttributeValues %}
+                        {% if attribute.AttributeKey == familyAttribute.Key %}
                             {% if attribute.ValueFormatted != '' %}
                             <div class="col-md-6">
                                 <b>{{ attribute.AttributeName }}</b><br><small> {{ attribute.ValueFormatted }}</small>
@@ -119,12 +165,119 @@
                         {%endif%}
                     {% endfor %}
                 {% endfor %}
+
                 </div>
             {% endif %}
+
+
+            <br />
+            {% if ViewOnly == false %}
+                <a class='btn btn-primary btn-xs' onclick="{{ CurrentPerson.Guid | Postback:'EditPerson' }}" > Update</a>
+            {% endif %}
+
+
+
         </div>
     </div>
 
      <!-- Family Info -->
-    <h3>
+    {% if ShowFamilyMembers == true %}
+        <hr />
+        <h3>{{ Family.Name }}</h3>
+        {% for familyMember in FamilyMembers %}
+
+            <div class='row'>
+                <div class="col-md-1">
+                    <div class="photo js-personphoto">
+                        <a href='{{ familyMember.Person.PhotoUrl }}'><img src='{{ familyMember.Person.PhotoUrl }}&maxwidth=200&maxheight=200'/></a>
+                    </div>
+                </div>
+                <div class="col-md-11">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <b>
+                                {{ familyMember.Person.FullName }}</b>
+                        </div>
+                        <div class="col-md-4">
+                            <ul class="person-demographics list-unstyled">
+                                <li>
+                                    {% if familyMember.Person.Age %}
+                                        {{ familyMember.Person.Age  }} yrs old <small>({{ familyMember.Person.BirthDate | Date:'sd' }})</small><br>
+                                    {% endif %}
+                                </li>
+                                <li>
+                                 {{ familyMember.Person.Gender}}
+                                <li>
+                                    {% if familyMember.Person.MaritalStatusValueId %}
+                                        {% assign maritalStatusValue = familyMember.Person.MaritalStatusValueId | FromCache:'DefinedValue' %}
+                                        {% if familyMember.Person.AnniversaryDate %}
+                                            {% assign marriedYears = familyMember.Person.AnniversaryDate | DateDiff:familyMember.Person.NextAnniversary,'Y' | Minus:1 %}
+                                            {% assign marriedDate = familyMember.Person.AnniversaryDate | Date:'M/d' %}
+                                            {{ maritalStatusValue.Value }} {{marriedYears}} yrs <small>({{ marriedDate }})</small>
+                                        {% else %}
+                                            {{ maritalStatusValue }}
+                                        {% endif %}
+                                    {% endif %}
+                                </li>
+                                <li>
+                                    {{ familyMember.Person.GradeFormatted }}
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            {% if ShowPhoneNumbers %}
+                                <ul class="phone-list list-unstyled">
+                                {% for phoneNumber in familyMember.Person.PhoneNumbers %}
+                                    {% assign numberTypeValue = phoneNumber.NumberTypeValueId | FromCache:'DefinedValue' %}
+                                    {% if DisplayedPhoneTypeValueIds | Contains:numberTypeValue.Id %}
+                                        <li>{% if phoneNumber.IsUnlisted %}Unlisted{%else%}{{ phoneNumber.NumberFormatted }}{%endif%} <small>{{ numberTypeValue.Value }}</small></li>
+                                    {% endif %}
+                                {% endfor %}
+                                </ul>
+                            {% endif %}
+
+                            {{ familyMember.Person.Email }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        {% if familyMember.Person.AgeClassification == 'Child' %}
+                            {% assign personAttributes = PersonAttributesChildren %}
+                        {% else %}
+                            {% assign personAttributes = PersonAttributesAdults %}
+                        {% endif %}
+
+                        {% if personAttributes %}
+                            {%- comment -%}loop thru Attributes so we can get the attribute value without checking security{%- endcomment -%}
+                            {%- for personAttribute in personAttributes -%}
+                                {%- for attribute in familyMember.Person.AttributeValues -%}
+                                    {%- if attribute.AttributeKey == personAttribute.Key -%}
+                                        {%- if attribute.ValueFormatted != '' -%}
+                                            <div class="col-md-6">
+                                            <b>{{ attribute.AttributeName }}</b><br><small> {{ attribute.ValueFormatted }}</small>
+                                            </div>
+                                        {%- endif -%}
+                                    {%- endif -%}
+                                {%- endfor -%}
+                            {%- endfor -%}
+                        {%- endif -%}
+
+                    </div>
+
+                    {% if ViewOnly == false %}
+                        <div class="row pull-right">
+                            <a class='btn btn-primary btn-xs' onclick="{{ familyMember.Person.Guid | Postback:'EditPerson' }}" > Update</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+
+        <a class='btn btn-primary btn-xs' onclick="{{ Family.Guid | Postback:'AddGroupMember' }}" > Add New Family Member</a>
+        {% if RequestChangesPageUrl != '' %}
+        <a class='btn btn-primary btn-xs' href="{{ RequestChangesPageUrl }}" > {{ RequestChangesText  }}</a>
+        {% endif %}
+
+    {% endif %}
+
 </div>
 
