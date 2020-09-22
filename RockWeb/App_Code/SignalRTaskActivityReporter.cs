@@ -282,7 +282,7 @@ namespace RockWeb
 
             _messageHub = GlobalHost.ConnectionManager.GetHubContext<TaskActivityMessageHub, ITaskActivityMessageHub>();
 
-            var taskInfo = new TaskStatusReport
+            var taskInfo = new TaskStatusSummary
             {
                 IsStarted = true,
                 StatusMessage = "Working...",
@@ -373,9 +373,9 @@ namespace RockWeb
 
                         _messageHub.Clients.All.UpdateTaskProgress( (TaskProgressMessage)thisMessage );
                     }
-                    else if ( thisMessage is TaskStatusReport )
+                    else if ( thisMessage is TaskStatusSummary )
                     {
-                        var infoMessage = (TaskStatusReport)thisMessage;
+                        var infoMessage = (TaskStatusSummary)thisMessage;
 
                         if ( infoMessage.IsStarted && !infoMessage.IsFinished )
                         {
@@ -399,23 +399,6 @@ namespace RockWeb
                 _isProcessing = false;
                 _notificationsCanSend = false;
             }
-        }
-
-        /// <summary>
-        /// Reset the activity reporter to a ready state.
-        /// </summary>
-        public void Reset()
-        {
-            StopTask();
-
-            _status = ReporterStatusSpecifier.Ready;
-
-            lock ( _reportQueueLock )
-            {
-                _reportQueue.Clear();
-            }
-
-            _messageHub.Clients.All.Reset();
         }
 
         private void DestroyTimer()
@@ -460,7 +443,7 @@ namespace RockWeb
                 statusMessage = "Task complete.";
             }
 
-            var taskInfo = new TaskStatusReport
+            var taskInfo = new TaskStatusSummary
             {
                 IsStarted = true,
                 IsFinished = true,

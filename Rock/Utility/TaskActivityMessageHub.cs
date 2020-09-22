@@ -50,7 +50,7 @@ namespace Rock.Utility
         /// Send a notification that the task has started.
         /// </summary>
         /// <param name="message"></param>
-        public void NotifyTaskStarted( TaskStatusReport message )
+        public void NotifyTaskStarted( TaskStatusSummary message )
         {
             Clients.All.NotifyTaskStarted( message );
         }
@@ -59,7 +59,7 @@ namespace Rock.Utility
         /// Send a notification that the task is completed.
         /// </summary>
         /// <param name="message"></param>
-        public void NotifyTaskComplete( TaskStatusReport message )
+        public void NotifyTaskComplete( TaskStatusSummary message )
         {
             Clients.All.NotifyTaskComplete( message );
         }
@@ -86,13 +86,13 @@ namespace Rock.Utility
         /// Send a notification that the task has started.
         /// </summary>
         /// <param name="message"></param>
-        void NotifyTaskStarted( TaskStatusReport message );
+        void NotifyTaskStarted( TaskStatusSummary message );
 
         /// <summary>
         /// Send a notification that the task is completed.
         /// </summary>
         /// <param name="message"></param>
-        void NotifyTaskComplete( TaskStatusReport message );
+        void NotifyTaskComplete( TaskStatusSummary message );
     }
 
     #endregion
@@ -283,7 +283,7 @@ namespace Rock.Utility
     /// <summary>
     /// A summary of the current status of a Task.
     /// </summary>
-    public class TaskStatusReport : ITaskActivityMessage
+    public class TaskStatusSummary : ITaskActivityMessage
     {
         /// <summary>
         /// A unique identifier for the task to which this activity relates.
