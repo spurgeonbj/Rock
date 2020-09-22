@@ -288,6 +288,9 @@ function onTaskCompleted( resultData )
 
             // set the email preview visible = false on every load so that it doesn't stick around after previewing then navigating
             pnlEmailPreview.Visible = false;
+
+            // Reset the Task Activity controls on the page.
+            SignalRTaskActivityUiHelper.SetTaskActivityControlMode( this.RockPage, SignalRTaskActivityUiHelper.ControlModeSpecifier.Hidden );
         }
 
         /// <summary>
