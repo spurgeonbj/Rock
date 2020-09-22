@@ -91,6 +91,7 @@ namespace Rock.Web.Cache
             {
                 var httpContext = HttpContext.Current;
                 var request = httpContext?.Request;
+                HttpCookie responseCookie;
 
                 if ( request == null )
                 {
@@ -108,16 +109,11 @@ namespace Rock.Web.Cache
                         // Don't allow switching to an invalid theme
                         if ( System.IO.Directory.Exists( httpContext.Server.MapPath( "~/Themes/" + theme ) ) )
                         {
-                            if ( cookie == null )
-                            {
-                                cookie = new HttpCookie( cookieName, theme );
-                            }
-                            else
-                            {
-                                cookie.Value = theme;
-                            }
+                            // The request cookie can include the SameSite property, which defaults to None and we can change.
+                            // So create a new cookie to save to the response.
+                            responseCookie = new HttpCookie( cookieName, theme );
 
-                            Rock.Web.UI.RockPage.AddOrUpdateCookie( cookie );
+                            Rock.Web.UI.RockPage.AddOrUpdateCookie( responseCookie );
                             return theme;
                         }
                     }
@@ -126,9 +122,11 @@ namespace Rock.Web.Cache
                         // if a blank theme was specified, remove any cookie (use default)
                         if ( cookie != null )
                         {
-                            cookie.Expires = RockDateTime.Now.AddDays( -10 );
-                            cookie.Value = null;
-                            Rock.Web.UI.RockPage.AddOrUpdateCookie( cookie );
+                            // The request cookie can include the SameSite property, which defaults to None and we can change.
+                            // So create a new cookie to save to the response.
+                            responseCookie = new HttpCookie( cookieName, null );
+                            responseCookie.Expires = RockDateTime.Now.AddDays( -10 );
+                            Rock.Web.UI.RockPage.AddOrUpdateCookie( responseCookie );
                             return ConfiguredTheme;
                         }
                     }
@@ -146,9 +144,9 @@ namespace Rock.Web.Cache
                 }
 
                 // Delete the invalid cookie
-                cookie.Expires = RockDateTime.Now.AddDays( -10 );
-                cookie.Value = null;
-                Rock.Web.UI.RockPage.AddOrUpdateCookie( cookie );
+                responseCookie = new HttpCookie( cookieName, null );
+                responseCookie.Expires = RockDateTime.Now.AddDays( -10 );
+                Rock.Web.UI.RockPage.AddOrUpdateCookie( responseCookie );
 
                 return ConfiguredTheme;
             }

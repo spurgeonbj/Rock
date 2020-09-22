@@ -2428,7 +2428,7 @@ Sys.Application.add_load(function () {
 
         /// <summary>
         /// Creates/Overwrites the specified cookie using the global default for the SameSite setting.
-        /// Removes the cookie from the Request and Response, then adds it to the Response.
+        /// Removes the cookie from the Request and Response using the cookie name, then adds the cookie to the Response.
         /// </summary>
         /// <param name="cookie">The cookie.</param>
         public static void AddOrUpdateCookie( HttpCookie cookie )
