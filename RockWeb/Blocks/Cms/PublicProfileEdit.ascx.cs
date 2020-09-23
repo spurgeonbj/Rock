@@ -218,10 +218,21 @@ namespace RockWeb.Blocks.Cms
         private static class MergeFieldKey
         {
             /// <summary>
+            /// If only View mode should be enabled.
+            /// If this is true, the Edit button should not be visible
+            /// </summary>
+            public const string ViewOnly = "ViewOnly";
+
+            /// <summary>
             /// The family that is currently selected (the person could be in multiple families).
             /// <see cref="Rock.Model.Group" />
             /// </summary>
             public const string Family = "Family";
+
+            /// <summary>
+            /// True if Family Members should be listed
+            /// </summary>
+            public const string ShowFamilyMembers = "ShowFamilyMembers";
 
             /// <summary>
             /// The members of the selected family.
@@ -234,17 +245,6 @@ namespace RockWeb.Blocks.Cms
             /// List <see cref="Rock.Model.Group" />
             /// </summary>
             public const string Families = "Families";
-
-            /// <summary>
-            /// If only View mode should be enabled.
-            /// If this is true, the Edit button should not be visible
-            /// </summary>
-            public const string ViewOnly = "ViewOnly";
-
-            /// <summary>
-            /// True if Family Members should be listed
-            /// </summary>
-            public const string ShowFamilyMembers = "ShowFamilyMembers";
 
             /// <summary>
             /// The address type defined value id that is displayed.
@@ -396,72 +396,86 @@ namespace RockWeb.Blocks.Cms
             }
             else
             {
-                if ( !HandleLavaPostback( this.Request.Params["__EVENTTARGET"], this.Request.Params["__EVENTARGUMENT"] ) )
+                var handled = HandleLavaPostback( this.Request.Params["__EVENTTARGET"], this.Request.Params["__EVENTARGUMENT"] );
+
+                if ( !UpdateEditControls() )
                 {
-                    var rockContext = new RockContext();
-                    var groupId = hfGroupId.Value.AsIntegerOrNull();
-                    if ( !groupId.HasValue )
-                    {
-                        return;
-                    }
-
-                    var group = new GroupService( rockContext ).Get( groupId.Value );
-                    var person = new PersonService( rockContext ).Get( hfEditPersonGuid.Value.AsGuid() );
-
-                    if ( person == null )
-                    {
-                        DisplayPersonAttributeOnRoleType( RoleTypeId );
-                    }
-
-                    if ( group == null || person == null )
-                    {
-                        return;
-                    }
-
-                    if ( !IsValidPersonForGroup( person, group ) )
-                    {
-                        return;
-                    }
-
-                    // Person Attributes
-                    var displayedAttributeGuids = GetPersonAttributeGuids( person.Id );
-                    if ( !displayedAttributeGuids.Any() || person.Id == 0 )
-                    {
-                        pnlPersonAttributes.Visible = false;
-                    }
-                    else
-                    {
-                        pnlPersonAttributes.Visible = true;
-                        DisplayEditAttributes( person, displayedAttributeGuids, phPersonAttributes, pnlPersonAttributes, false );
-                    }
-
-                    // Family Attributes
-                    if ( person.Id == CurrentPerson.Id )
-                    {
-                        List<Guid> familyAttributeGuidList = GetAttributeValue( AttributeKey.FamilyAttributes ).SplitDelimitedValues().AsGuidList();
-                        if ( familyAttributeGuidList.Any() )
-                        {
-                            pnlFamilyAttributes.Visible = true;
-                            DisplayEditAttributes( group, familyAttributeGuidList, phFamilyAttributes, pnlFamilyAttributes, false );
-                        }
-                        else
-                        {
-                            pnlFamilyAttributes.Visible = false;
-                        }
-                    }
+                    return;
                 }
             }
         }
 
         /// <summary>
-        /// Handles any custom postbacks from the Lava 
+        /// Makes sure the edit controls are correctly shown.
+        /// If this returns false, the edit controls couldn't be configured due to invalid postback parameters.
+        /// </summary>
+        /// <returns></returns>
+        public bool UpdateEditControls()
+        {
+            var rockContext = new RockContext();
+            var groupId = hfGroupId.Value.AsIntegerOrNull();
+            if ( !groupId.HasValue )
+            {
+                return false;
+            }
+
+            var group = new GroupService( rockContext ).Get( groupId.Value );
+            var person = new PersonService( rockContext ).Get( hfEditPersonGuid.Value.AsGuid() );
+
+            if ( person == null )
+            {
+                UpdateEditControlsForRole( RoleTypeId );
+            }
+
+            if ( group == null || person == null )
+            {
+                return false;
+            }
+
+            if ( !IsValidPersonForGroup( person, group ) )
+            {
+                return false;
+            }
+
+            // Person Attributes
+            var displayedAttributeGuids = GetPersonAttributeGuids( person.Id );
+            if ( !displayedAttributeGuids.Any() || person.Id == 0 )
+            {
+                pnlPersonAttributes.Visible = false;
+            }
+            else
+            {
+                pnlPersonAttributes.Visible = true;
+                DisplayEditAttributes( person, displayedAttributeGuids, phPersonAttributes, pnlPersonAttributes, false );
+            }
+
+            // Family Attributes
+            if ( person.Id == CurrentPerson.Id )
+            {
+                List<Guid> familyAttributeGuidList = GetAttributeValue( AttributeKey.FamilyAttributes ).SplitDelimitedValues().AsGuidList();
+                if ( familyAttributeGuidList.Any() )
+                {
+                    pnlFamilyAttributes.Visible = true;
+                    DisplayEditAttributes( group, familyAttributeGuidList, phFamilyAttributes, pnlFamilyAttributes, false );
+                }
+                else
+                {
+                    pnlFamilyAttributes.Visible = false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Handles any custom postbacks from the Lava.
+        /// Returns true if one of the custom Lava postbacks was handled
         /// </summary>
         /// <param name="eventTarget">The event target.</param>
         /// <param name="eventArgument">The event argument.</param>
         /// <returns></returns>
         private bool HandleLavaPostback( string eventTarget, string eventArgument )
         {
-            Debug.WriteLine( "{0} {1}", eventTarget, eventArgument );
             if ( !eventTarget.Equals( upContent.UniqueID, StringComparison.OrdinalIgnoreCase ) )
             {
                 // post back from some other block
@@ -559,7 +573,7 @@ namespace RockWeb.Blocks.Cms
 
             mergeFields.Add( MergeFieldKey.ShowPhoneNumbers, GetAttributeValue( AttributeKey.ShowPhoneNumbers ).AsBoolean() );
 
-            var phoneTypeValueIds = GetAttributeValues( AttributeKey.PhoneTypeValueGuids ).AsGuidList().Select( a => DefinedValueCache.GetId( a ) );
+            var phoneTypeValueIds = GetAttributeValues( AttributeKey.PhoneTypeValueGuids ).AsGuidList().Select( a => DefinedValueCache.GetId( a ) ).ToList();
             mergeFields.Add( MergeFieldKey.DisplayedPhoneTypeValueIds, phoneTypeValueIds );
 
             var requestChangesPageUrl = LinkedPageUrl( AttributeKey.RequestChangesPage, new Dictionary<string, string>() );
@@ -574,7 +588,6 @@ namespace RockWeb.Blocks.Cms
 
             var viewPersonLavaTemplate = GetAttributeValue( AttributeKey.ViewTemplate );
 
-            CurrentPerson.LoadAttributes();
             var viewPersonHtml = viewPersonLavaTemplate.ResolveMergeFields( mergeFields ).ResolveClientIds( upContent.UniqueID );
             lViewPersonContent.Visible = true;
             lViewPersonContent.Text = viewPersonHtml;
@@ -1108,7 +1121,7 @@ namespace RockWeb.Blocks.Cms
         protected void rblRole_SelectedIndexChanged( object sender, EventArgs e )
         {
             var selectedId = rblRole.SelectedValueAsId();
-            DisplayPersonAttributeOnRoleType( selectedId );
+            UpdateEditControlsForRole( selectedId );
             RoleTypeId = selectedId;
         }
 
@@ -1369,7 +1382,7 @@ namespace RockWeb.Blocks.Cms
 
             bool showPhoneNumbers = GetAttributeValue( AttributeKey.ShowPhoneNumbers ).AsBoolean();
             pnlPhoneNumbers.Visible = showPhoneNumbers;
-            if ( showPhoneNumbers )
+            if ( !showPhoneNumbers )
             {
                 return;
             }
@@ -1437,10 +1450,10 @@ namespace RockWeb.Blocks.Cms
         }
 
         /// <summary>
-        /// Display Person Attribute on the Basis of Role
+        /// Update the EditControls that depend on RoleType
         /// </summary>
-        /// <param name="selectedId">The id of the selected group identifier.</param>
-        private void DisplayPersonAttributeOnRoleType( int? roleTypeId )
+        /// <param name="roleTypeId">The role type identifier.</param>
+        private void UpdateEditControlsForRole( int? roleTypeId )
         {
             if ( !roleTypeId.HasValue )
             {

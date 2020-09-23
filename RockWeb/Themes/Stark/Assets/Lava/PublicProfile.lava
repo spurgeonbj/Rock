@@ -13,8 +13,8 @@
     Address = (Rock.Model.GroupLocation) The address to be displayed
 
     ShowPhoneNumbers - If this is true, phone numbers should be shown
-    PhoneNumbers (List of Rock.Model.PhoneNumber)) - The phone numbers that can be displayed
     DisplayedPhoneTypeValueIds - (List of DefinedValueCache Ids) - The Phone Type defined values ids that should be shown
+    PhoneNumbers (List of Rock.Model.PhoneNumber)) - The phone numbers that can be displayed
 
     RequestChangesPageUrl - The URL to use when they press the Request Changes button
     RequestChangesText - The text to shown on the Request Changes button
@@ -69,7 +69,7 @@
                             {% endif %}
                         </li>
                         <li>
-                            {{ CurrentPerson.Gender }}
+                            {%if CurrentPerson.Gender != "Unknown" %}{{ CurrentPerson.Gender }}{% endif %}
                         </li>
                         <li>
                             {% if CurrentPerson.MaritalStatusValueId %}
@@ -93,7 +93,8 @@
                         <ul class="phone-list list-unstyled">
                         {% for phoneNumber in CurrentPerson.PhoneNumbers %}
                             {% assign numberTypeValue = phoneNumber.NumberTypeValueId | FromCache:'DefinedValue' %}
-                            {% if DisplayedPhoneTypeValueIds | Contains:numberTypeValue.Id %}
+                            {% assign displayPhoneType = DisplayedPhoneTypeValueIds | Contains:numberTypeValue.Id %}
+                            {% if displayPhoneType %}
                                 <li>{% if phoneNumber.IsUnlisted %}Unlisted{%else%}{{ phoneNumber.NumberFormatted }}{%endif%} <small>{{ numberTypeValue.Value }}</small></li>
                             {% endif %}
                         {% endfor %}
@@ -132,7 +133,6 @@
                 </div>
             {% endif %}
 
-
             {%- comment -%}loop thru Attributes to see if there are any non-blank ones{%- endcomment%}
             {% assign showFamilyAttributes = false %}
             {% for familyAttribute in FamilyAttributes %}
@@ -169,13 +169,10 @@
                 </div>
             {% endif %}
 
-
             <br />
             {% if ViewOnly == false %}
                 <a class='btn btn-primary btn-xs' onclick="{{ CurrentPerson.Guid | Postback:'EditPerson' }}" > Update</a>
             {% endif %}
-
-
 
         </div>
     </div>
@@ -206,7 +203,7 @@
                                     {% endif %}
                                 </li>
                                 <li>
-                                 {{ familyMember.Person.Gender}}
+                                    {%if familyMember.Person.Gender != "Unknown" %}{{ familyMember.Person.Gender }}{% endif %}
                                 <li>
                                     {% if familyMember.Person.MaritalStatusValueId %}
                                         {% assign maritalStatusValue = familyMember.Person.MaritalStatusValueId | FromCache:'DefinedValue' %}
@@ -229,7 +226,8 @@
                                 <ul class="phone-list list-unstyled">
                                 {% for phoneNumber in familyMember.Person.PhoneNumbers %}
                                     {% assign numberTypeValue = phoneNumber.NumberTypeValueId | FromCache:'DefinedValue' %}
-                                    {% if DisplayedPhoneTypeValueIds | Contains:numberTypeValue.Id %}
+                                    {% assign displayPhoneType = DisplayedPhoneTypeValueIds | Contains:numberTypeValue.Id %}
+                                    {% if displayPhoneType %}
                                         <li>{% if phoneNumber.IsUnlisted %}Unlisted{%else%}{{ phoneNumber.NumberFormatted }}{%endif%} <small>{{ numberTypeValue.Value }}</small></li>
                                     {% endif %}
                                 {% endfor %}
@@ -240,7 +238,7 @@
                         </div>
                     </div>
                     <div class="row">
-                        {% if familyMember.Person.AgeClassification == 'Child' %}
+                        {% if familyMember.GroupRole.Guid == 'c8b1814f-6aa7-4055-b2d7-48fe20429cb9' %}
                             {% assign personAttributes = PersonAttributesChildren %}
                         {% else %}
                             {% assign personAttributes = PersonAttributesAdults %}
@@ -270,11 +268,15 @@
                     {% endif %}
                 </div>
             </div>
+            <br>
         {% endfor %}
 
-        <a class='btn btn-primary btn-xs' onclick="{{ Family.Guid | Postback:'AddGroupMember' }}" > Add New Family Member</a>
+        {% if ViewOnly == false %}
+            <a class='btn btn-primary btn-xs' onclick="{{ Family.Guid | Postback:'AddGroupMember' }}" > Add New Family Member</a>
+        {% endif %}
+
         {% if RequestChangesPageUrl != '' %}
-        <a class='btn btn-primary btn-xs' href="{{ RequestChangesPageUrl }}" > {{ RequestChangesText  }}</a>
+            <a class='btn btn-primary btn-xs' href="{{ RequestChangesPageUrl }}" > {{ RequestChangesText  }}</a>
         {% endif %}
 
     {% endif %}
