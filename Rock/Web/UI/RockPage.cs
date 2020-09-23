@@ -2428,7 +2428,9 @@ Sys.Application.add_load(function () {
 
         /// <summary>
         /// Creates/Overwrites the specified cookie using the global default for the SameSite setting.
-        /// Removes the cookie from the Request and Response using the cookie name, then adds the cookie to the Response.
+        /// This method creates a new cookie using a deep clone of the provided cookie to ensure a cookie written to the response
+        /// does not contain properties that are not compatible with .Net 4.5.2 (e.g. SameSite).
+        /// Removes the cookie from the Request and Response using the cookie name, then adds the cloned clean cookie to the Response.
         /// </summary>
         /// <param name="cookie">The cookie.</param>
         public static void AddOrUpdateCookie( HttpCookie cookie )
@@ -2436,16 +2438,26 @@ Sys.Application.add_load(function () {
             // If the samesite setting is not in the Path then add it
             if ( cookie.Path.IsNullOrWhiteSpace() || !cookie.Path.Contains( "SameSite" ) )
             {
-                SameSiteCookieSetting sameSiteCookieSetting = GlobalAttributesCache.Get().GetValue( "core_SameSiteCookieSetting" )
-                    .ConvertToEnumOrNull<SameSiteCookieSetting>() ?? SameSiteCookieSetting.Lax;
+                SameSiteCookieSetting sameSiteCookieSetting = GlobalAttributesCache.Get().GetValue( "core_SameSiteCookieSetting" ).ConvertToEnumOrNull<SameSiteCookieSetting>() ?? SameSiteCookieSetting.Lax;
 
                 string sameSiteCookieValue = ";SameSite=" + sameSiteCookieSetting;
                 cookie.Path += sameSiteCookieValue;
             }
 
-            HttpContext.Current.Request.Cookies.Remove( cookie.Name );
-            HttpContext.Current.Response.Cookies.Remove( cookie.Name );
-            HttpContext.Current.Response.Cookies.Add( cookie );
+            // Clone the cookie to prevent the SameSite property from making an appearence in our response.
+            var responseCookie = new HttpCookie( cookie.Name )
+            {
+                Domain = cookie.Domain,
+                Expires = cookie.Expires,
+                HttpOnly = cookie.HttpOnly,
+                Path = cookie.Path,
+                Secure = cookie.Secure,
+                Value = cookie.Value
+            };
+
+            HttpContext.Current.Request.Cookies.Remove( responseCookie.Name );
+            HttpContext.Current.Response.Cookies.Remove( responseCookie.Name );
+            HttpContext.Current.Response.Cookies.Add( responseCookie );
         }
 
         /// <summary>
