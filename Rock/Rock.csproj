@@ -543,8 +543,12 @@
     <Compile Include="Bus\Consumer\StartTaskConsumer.cs" />
     <Compile Include="Bus\Consumer\EntityWasUpdatedConsumer.cs" />
     <Compile Include="Bus\Message\StartTaskMessage.cs" />
+    <Compile Include="Bus\Message\IEventBusTransaction.cs" />
     <Compile Include="Bus\Message\EntityWasUpdatedMessage.cs" />
     <Compile Include="Bus\RockMessageBus.cs" />
+    <Compile Include="Bus\Transport\Component\RabbitMq.cs" />
+    <Compile Include="Bus\Transport\TransportComponent.cs" />
+    <Compile Include="Bus\Transport\TransportContainer.cs" />
     <Compile Include="CheckIn\LocalDeviceConfiguration.cs" />
     <Compile Include="Communication\CommunicationHelper.cs" />
     <Compile Include="Communication\IRockMobilePush.cs" />

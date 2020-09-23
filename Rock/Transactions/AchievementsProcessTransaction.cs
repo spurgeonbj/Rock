@@ -17,6 +17,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Rock.Bus.Message;
 using Rock.Data;
 using Rock.Web.Cache;
 
@@ -26,8 +27,13 @@ namespace Rock.Transactions
     /// Transaction to process achievements for updated source entities
     /// </summary>
     /// <seealso cref="Rock.Transactions.ITransaction" />
-    public class AchievementsProcessingTransaction : ITransaction
+    public class AchievementsProcessingTransaction : IEventBusTransaction
     {
+        /// <summary>
+        /// Gets or sets the name of the task.
+        /// </summary>
+        public string TaskName { get; set; } = nameof( AchievementsProcessingTransaction );
+
         /// <summary>
         /// The entities that need to be processed
         /// </summary>

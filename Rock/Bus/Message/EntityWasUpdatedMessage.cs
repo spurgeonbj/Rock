@@ -37,7 +37,7 @@ namespace Rock.Bus.Message
         /// <summary>
         /// Gets the state of the entity.
         /// </summary>
-        EntityState EntityState { get; set; }
+        string EntityState { get; set; }
     }
 
     /// <summary>
@@ -58,6 +58,6 @@ namespace Rock.Bus.Message
         /// <summary>
         /// Gets the state of the entity.
         /// </summary>
-        public EntityState EntityState { get; set; }
+        public string EntityState { get; set; }
     }
 }
