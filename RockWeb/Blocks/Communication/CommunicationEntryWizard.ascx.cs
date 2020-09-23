@@ -3033,45 +3033,24 @@ sendCountTerm.PluralizeIf( sendCount != 1 ) );
             /// that may break the limits of the query parser.
             /// </summary>
             /// <param name="rockContext">The rock context.</param>
-            private IQueryable<int> GetRecipientPersonIdPersistedList( List<int> personIdList, RockContext dataContext )
+            private IQueryable<int> GetRecipientPersonIdPersistedList( List<int> personIdList, RockContext rockContext )
             {
-                // Create an entity set containing the selected individuals.
-                if ( personIdList != null
-                     && personIdList.Any() )
+                if ( personIdList == null
+                     || !personIdList.Any() )
                 {
-                    var entitySet = new Rock.Model.EntitySet();
-                    entitySet.Name = "RecipientPersonEntitySet_Communication";
-                    entitySet.EntityTypeId = Rock.Web.Cache.EntityTypeCache.Get<Rock.Model.Person>().Id;
-                    entitySet.ExpireDateTime = RockDateTime.Now.AddMinutes( 20 );
-
-                    foreach ( var key in personIdList )
-                    {
-                        try
-                        {
-                            var item = new Rock.Model.EntitySetItem();
-                            item.EntityId = (int)key;
-                            entitySet.Items.Add( item );
-                        }
-                        catch
-                        {
-                            // ignore
-                        }
-                    }
-
-                    if ( entitySet.Items.Any() )
-                    {
-                        var service = new Rock.Model.EntitySetService( dataContext );
-                        service.Add( entitySet );
-
-                        dataContext.SaveChanges();
-
-                        var entitySetItemQuery = new EntitySetItemService( dataContext ).Queryable().Where( x => x.EntitySetId == entitySet.Id ).Select( x => x.Id );
-
-                        return entitySetItemQuery;
-                    }
+                    return null;
                 }
 
-                return null;
+                var service = new Rock.Model.EntitySetService( rockContext );
+
+                var entitySetId = service.AddEntitySet( "RecipientPersonEntitySet_Communication",
+                    Rock.Web.Cache.EntityTypeCache.Get<Rock.Model.Person>().Id,
+                    personIdList,
+                    20 );
+
+                var entityQuery = service.GetEntityQuery( entitySetId ).Select( x => x.Id );
+
+                return entityQuery;
             }
 
             #region Helper Classes
