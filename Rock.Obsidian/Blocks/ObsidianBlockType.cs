@@ -81,18 +81,21 @@ namespace Rock.Obsidian.Blocks
             return
 $@"<div id=""{rootElementId}""></div>
 <script>
-    Obsidian.Util.loadVueFile('/Obsidian/{BlockMarkupFileIdentifier}.vue', '#{rootElementId}');
+    Obsidian.Util.loadVueFile('/Obsidian/Blocks/{BlockMarkupFileIdentifier}.vue', '#{rootElementId}');
 </script>
 <script type=""text/javascript"">
     Obsidian.Blocks['{BlockMarkupFileIdentifier}'] = {{
         rootElement: document.getElementById('{rootElementId}'),
-        pageId: {BlockCache.PageId},
-        blockId: {BlockCache.Id},
+        pageGuid: '{BlockCache.Page.Guid}',
+        blockGuid: '{BlockCache.Guid}',
         additionalSettingsJson: {ConvertObjectToJavaScript( GetAdditionalSettings() )},
         configurationValuesJson: {ConvertObjectToJavaScript( GetConfigurationValues() )},
         blockAction: Obsidian.Util.getBlockActionFunction({{
-            pageId: {BlockCache.PageId},
-            blockId: {BlockCache.Id}
+            pageGuid: '{BlockCache.Page.Guid}',
+            blockGuid: '{BlockCache.Guid}'
+        }}),
+        http: Obsidian.Util.getBlockHttp({{
+            blockGuid: '{BlockCache.Guid}'
         }})
     }};
 </script>";

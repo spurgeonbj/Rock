@@ -1,5 +1,5 @@
 ﻿<template>
-    <div class="login-block obsidian-block">
+    <div class="login-block">
         <fieldset>
             <legend>Login</legend>
 

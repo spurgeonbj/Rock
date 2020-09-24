@@ -98,7 +98,8 @@ public class BundleConfig
             "~/Obsidian/Vendor/vue.js",
             "~/Obsidian/Vendor/vue-in-browser.js",
             "~/Obsidian/init.js",
-            "~/Obsidian/VueControls/*.js" ) );
+            "~/Obsidian/Elements/*.js",
+            "~/Obsidian/Controls/*.js" ) );
 
         // make sure the ConcatenationToken is what we want.  This is supposed to be the default, but it occasionally was an empty string.
         foreach ( var bundle in bundles )

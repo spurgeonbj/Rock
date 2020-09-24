@@ -1,4 +1,10 @@
-﻿Vue.component('rock-definedvaluepicker', {
+﻿Obsidian.Controls.RockDefinedValuePicker = {
+    components: {
+        RockDropDownList: Obsidian.Elements.RockDropDownList
+    },
+    inject: [
+        'http'
+    ],
     props: {
         value: {
             type: String,
@@ -19,7 +25,6 @@
     },
     data: function () {
         return {
-            uniqueId: `rock-definedvaluepicker-${Obsidian.Util.getGuid()}`,
             internalValue: this.value,
             definedValues: [],
             isLoading: false
@@ -28,6 +33,13 @@
     computed: {
         isEnabled: function () {
             return !!this.definedTypeGuid && !this.isLoading;
+        },
+        options: function () {
+            return this.definedValues.map(dv => ({
+                key: dv.Guid,
+                value: dv.Guid,
+                text: dv.Value
+            }));
         }
     },
     methods: {
@@ -49,8 +61,7 @@
                 }
 
                 this.isLoading = true;
-                const result = await this.$http.get(
-                    `/api/DefinedValues?$filter=IsActive eq true and DefinedType/Guid eq guid'${this.definedTypeGuid}'&$select=Value,Guid`);
+                const result = await this.http.get(`/api/obsidian/v1/controls/definedvaluepicker/${this.definedTypeGuid}`);
 
                 if (result && Array.isArray(result.data)) {
                     this.definedValues = result.data;
@@ -61,13 +72,5 @@
         }
     },
     template:
-`<div class="form-group defined-value-picker" :class="{required: required}">
-    <label class="control-label" :for="uniqueId">{{label}}</label>
-    <div class="control-wrapper">
-        <select :id="uniqueId" class="form-control" v-model="internalValue" @change="onChange" :disabled="!isEnabled">
-            <option value=""></option>
-            <option v-for="dv in definedValues" :key="dv.Guid" :value="dv.Guid">{{dv.Value}}</option>
-        </select>
-    </div>
-</div>`
-});
+`<RockDropDownList v-model="internalValue" @change="onChange" :disabled="!isEnabled" :label="label" :options="options" />`
+};

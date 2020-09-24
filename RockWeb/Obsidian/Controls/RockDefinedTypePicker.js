@@ -1,4 +1,10 @@
-﻿Vue.component('rock-definedtypepicker', {
+﻿Obsidian.Controls.RockDefinedTypePicker = {
+    components: {
+        RockDropDownList: Obsidian.Elements.RockDropDownList
+    },
+    inject: [
+        'http'
+    ],
     props: {
         value: {
             type: String,
@@ -15,11 +21,19 @@
     },
     data: function () {
         return {
-            uniqueId: `rock-definedtypepicker-${Obsidian.Util.getGuid()}`,
             internalValue: this.value,
             definedTypes: [],
             isLoading: false
         };
+    },
+    computed: {
+        options: function () {
+            return this.definedTypes.map(dt => ({
+                key: dt.Guid,
+                value: dt.Guid,
+                text: dt.Name
+            }));
+        }
     },
     methods: {
         onChange: function () {
@@ -34,8 +48,7 @@
     },
     created: async function () {
         this.isLoading = true;
-        const result = await this.$http.get(
-            '/api/DefinedTypes?$filter=IsActive eq true&$select=Guid,Name');
+        const result = await this.http.get('/api/obsidian/v1/controls/definedtypepicker');
 
         if (result && Array.isArray(result.data)) {
             this.definedTypes = result.data;
@@ -44,13 +57,5 @@
         this.isLoading = false;
     },
     template:
-`<div class="form-group defined-type-picker" :class="{required: required}">
-    <label class="control-label" :for="uniqueId">{{label}}</label>
-    <div class="control-wrapper">
-        <select :id="uniqueId" class="form-control" v-model="internalValue" @change="onChange" :disabled="isLoading">
-            <option value=""></option>
-            <option v-for="dt in definedTypes" :key="dt.Guid" :value="dt.Guid">{{dt.Name}}</option>
-        </select>
-    </div>
-</div>`
-});
+`<RockDropDownList v-model="internalValue" @change="onChange" :disabled="isLoading" :label="label" :options="options" />`
+};

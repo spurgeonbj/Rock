@@ -8,10 +8,10 @@
             const v = c === 'x' ? r : r & 0x3 | 0x8;
             return v.toString(16);
         }),
-        getBlockActionFunction: ({ blockId, pageId }) => {
+        getBlockActionFunction: ({ blockGuid, pageGuid }) => {
             return async (actionName, data) => {
                 try {
-                    return await axios.post(`/api/blocks/action/${pageId}/${blockId}/${actionName}`, data);
+                    return await Obsidian.Http.post(`/api/blocks/action/${pageGuid}/${blockGuid}/${actionName}`, undefined, data);
                 }
                 catch (e) {
                     if (e.response && e.response.data && e.response.data.Message) {
@@ -22,10 +22,34 @@
                 }
             };
         },
+        getBlockHttp: ({ blockGuid }) => {
+            const call = (method, url, params, data) => {
+                Obsidian.BlockLog[blockGuid] = Obsidian.BlockLog[blockGuid] || [];
+                const log = Obsidian.BlockLog[blockGuid];
+                log.push(method);
+
+                return axios({
+                    method,
+                    url,
+                    data,
+                    params
+                });
+            };
+
+            return {
+                get: (url, params) => {
+                    return call('GET', url, params);
+                },
+                post: (url, params, data) => {
+                    return call('POST', url, params, data);
+                }
+            };
+        },
         isSuccessStatusCode: (statusCode) => statusCode && statusCode / 100 === 2
     };
 
+    Obsidian.Elements = {};
+    Obsidian.Controls = {};
     Obsidian.Blocks = {};
-
-    Vue.prototype.$http = axios;
+    Obsidian.BlockLog = {};
 })();

@@ -1,17 +1,21 @@
-﻿Vue.component('rock-checkbox', {
+﻿Obsidian.Elements.RockTextBox = {
     props: {
         value: {
-            type: Boolean,
+            type: String,
             required: true
         },
         label: {
             type: String,
             required: true
+        },
+        type: {
+            type: String,
+            default: 'text'
         }
     },
     data: function() {
         return {
-            uniqueId: `rock-checkbox-${Obsidian.Util.getGuid()}`,
+            uniqueId: `rock-textbox-${Obsidian.Util.getGuid()}`,
             internalValue: this.value
         };
     },
@@ -29,10 +33,12 @@
         }
     },
     template:
-`<div class="checkbox">
-    <label title="">
-        <input type="checkbox" v-model="internalValue" />
-        <span class="label-text ">{{label}}</span>
+`<div class="form-group rock-text-box">
+    <label class="control-label" :for="uniqueId">
+        {{label}}
     </label>
+    <div class="control-wrapper">
+        <input :id="uniqueId" :type="type" class="form-control" v-model="internalValue" @change="handleChange" @input="handleInput" />
+    </div>
 </div>`
-});
+};

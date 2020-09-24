@@ -1,4 +1,4 @@
-﻿Vue.component('rock-button', {
+﻿Obsidian.Elements.RockButton = {
     props: {
         label: {
             type: String,
@@ -22,4 +22,4 @@
 `<button class="btn" :disabled="isLoading" @click="handleClick">
     {{isLoading ? loadingText : label}}
 </button>`
-});
+};

@@ -33,6 +33,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Web.Http, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -45,9 +46,15 @@
     <Compile Include="Blocks\ObsidianBlockType.cs" />
     <Compile Include="Blocks\Security\Login.cs" />
     <Compile Include="Blocks\Test\Controls.cs" />
+    <Compile Include="Controls\DefinedValuePickerController.cs" />
+    <Compile Include="Controls\DefinedTypePickerController.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Rock.Rest\Rock.Rest.csproj">
+      <Project>{ADD1EDD0-A4CB-4E82-B6AD-6AD1D556DEAE}</Project>
+      <Name>Rock.Rest</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Rock\Rock.csproj">
       <Project>{185a31d7-3037-4dae-8797-0459849a84bd}</Project>
       <Name>Rock</Name>
