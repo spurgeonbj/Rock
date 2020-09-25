@@ -41,7 +41,7 @@ namespace Rock.Model
         /// <param name="entityIdList"></param>
         /// <param name="expiryMinutes"></param>
         /// <returns></returns>
-        public int AddEntitySet( string name, int entityTypeId, List<int> entityIdList, int expiryMinutes = 20 )
+        public int AddEntitySet( string name, int entityTypeId, IEnumerable<int> entityIdList, int expiryMinutes = 20 )
         {
             // Create a new Entity Set.
             var entitySet = new Rock.Model.EntitySet();

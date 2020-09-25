@@ -1620,7 +1620,7 @@ function onTaskCompleted( resultData )
                 return;
             }
 
-            Rock.Model.Communication communication = UpdateCommunication( new RockContext() );
+            var communication = UpdateCommunication( new RockContext() );
 
             if ( communication != null )
             {
@@ -1863,7 +1863,8 @@ function onTaskCompleted( resultData )
             }
 
             var commonMergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( null, currentPerson );
-            var sampleCommunicationRecipient = communication.Recipients.FirstOrDefault();
+
+            var sampleCommunicationRecipient = GetSampleCommunicationRecipient( communication, rockContext );            
             sampleCommunicationRecipient.Communication = communication;
             sampleCommunicationRecipient.PersonAlias = sampleCommunicationRecipient.PersonAlias ?? new PersonAliasService( rockContext ).Get( sampleCommunicationRecipient.PersonAliasId );
             var mergeFields = sampleCommunicationRecipient.CommunicationMergeValues( commonMergeFields );
@@ -2071,9 +2072,12 @@ function onTaskCompleted( resultData )
             // make the PersonId of the First Recipient available to Javascript so that we can do some Lava processing using REST and Javascript
             var rockContext = new RockContext();
             Rock.Model.Communication communication = UpdateCommunication( rockContext );
-            var firstRecipient = communication.Recipients.First();
-            firstRecipient.PersonAlias = firstRecipient.PersonAlias ?? new PersonAliasService( rockContext ).Get( firstRecipient.PersonAliasId );
-            hfSMSSampleRecipientPersonId.Value = communication.Recipients.First().PersonAlias.PersonId.ToString();
+            var firstRecipient = GetSampleCommunicationRecipient( communication, rockContext );
+            if ( firstRecipient != null )
+            {
+                firstRecipient.PersonAlias = firstRecipient.PersonAlias ?? new PersonAliasService( rockContext ).Get( firstRecipient.PersonAliasId );
+                hfSMSSampleRecipientPersonId.Value = firstRecipient.PersonAlias.PersonId.ToString();
+            }
 
             nbSMSTestResult.Visible = false;
             pnlMobileTextEditor.Visible = true;
@@ -2431,9 +2435,15 @@ sendCountTerm.PluralizeIf( sendCount != 1 ) );
 
                 progressReporter.StartTask();
 
+                progressReporter.Report( 0, "Working..." );
+
                 var rockContext = new RockContext();
 
-                Rock.Model.Communication communication = UpdateCommunication( rockContext, progressReporter );
+                var communication = UpdateCommunication( rockContext );
+
+                UpdateCommunicationRecipients( communication, rockContext, progressReporter );
+
+                progressReporter.Report( 90, "Finalizing Communication..." );
 
                 int maxRecipients = GetAttributeValue( AttributeKey.MaximumRecipients ).AsIntegerOrNull() ?? int.MaxValue;
                 bool userCanApprove = IsUserAuthorized( "Approve" );
@@ -2701,21 +2711,12 @@ sendCountTerm.PluralizeIf( sendCount != 1 ) );
         /// <param name="rockContext"></param>
         /// <param name="activityReporter"></param>
         /// <returns></returns>
-        private Rock.Model.Communication UpdateCommunication( RockContext rockContext, SignalRTaskActivityReporter activityReporter = null )
+        private Rock.Model.Communication UpdateCommunication( RockContext rockContext )
         {
             // Get the current wizard settings for the new Communication.
             var settings = new CommunicationOperationsService.CommunicationProperties();
 
             settings.CommunicationId = hfCommunicationId.Value.AsInteger();
-
-            if ( tglRecipientSelection.Checked )
-            {
-                settings.RecipientPersonIds = GetRecipientFromListSelection().Select( a => a.PersonId ).ToList();
-            }
-            else
-            {
-                settings.RecipientPersonIds = this.IndividualRecipientPersonIds;
-            }
 
             settings.SenderPersonAliasId = CurrentPersonAliasId;
             settings.EnabledLavaCommands = GetAttributeValue( AttributeKey.EnabledLavaCommands );
@@ -2772,9 +2773,58 @@ sendCountTerm.PluralizeIf( sendCount != 1 ) );
             // Update the Communication by applying the new settings.
             var operationsService = new CommunicationOperationsService();
 
-            var communication = operationsService.CreateOrUpdateCommunication( rockContext, settings, activityReporter );
+            var communication = operationsService.CreateOrUpdateCommunication( rockContext, settings );
 
             return communication;
+        }
+
+        /// <summary>
+        /// Create or update the recipients of a Communication by applying the current selections and settings.
+        /// </summary>
+        private void UpdateCommunicationRecipients( Rock.Model.Communication communication, RockContext rockContext, SignalRTaskActivityReporter activityReporter = null )
+        { 
+            if ( communication == null )
+            {
+                return;
+            }
+
+            List<int> recipientPersonIdList;
+
+            if ( tglRecipientSelection.Checked )
+            {
+                recipientPersonIdList = GetRecipientFromListSelection().Select( a => a.PersonId ).ToList();
+            }
+            else
+            {
+                recipientPersonIdList = this.IndividualRecipientPersonIds;
+            }
+
+            var operationsService = new CommunicationOperationsService();
+
+            operationsService.UpdateCommunicationRecipients( rockContext, communication.Id, recipientPersonIdList, activityReporter );
+        }
+
+        /// <summary>
+        /// Gets an individual communication recipient for preview and testing purposes.
+        /// </summary>
+        private CommunicationRecipient GetSampleCommunicationRecipient( Rock.Model.Communication communication, RockContext rockContext )
+        {
+            int recipientPersonId;
+
+            if ( tglRecipientSelection.Checked )
+            {
+                recipientPersonId = GetRecipientFromListSelection().Select( a => a.PersonId ).FirstOrDefault();
+            }
+            else
+            {
+                recipientPersonId = this.IndividualRecipientPersonIds.FirstOrDefault();                
+            }
+
+            // Get the recipient with a specific query rather than using the Recipients navigation collection,
+            // because this would trigger lazy-loading to populate the entire collection, which may be very large.
+            var recipient = communication.GetRecipientsQry( rockContext ).FirstOrDefault();
+
+            return recipient;
         }
 
         #region Service Classes
@@ -2791,30 +2841,127 @@ sendCountTerm.PluralizeIf( sendCount != 1 ) );
             /// <param name="settings"></param>
             /// <param name="progressReporter"></param>
             /// <returns></returns>
-            public Rock.Model.Communication CreateOrUpdateCommunication( RockContext rockContext, CommunicationProperties settings, IProgress<TaskProgressMessage> progressReporter = null )
+            public Rock.Model.Communication CreateOrUpdateCommunication( RockContext rockContext, CommunicationProperties settings )
             {
-                var stopwatch = Stopwatch.StartNew();
-
-                ReportProgress( progressReporter, 0, activityMessage: "Running..." );
-
                 var communicationService = new CommunicationService( rockContext );
                 var communicationAttachmentService = new CommunicationAttachmentService( rockContext );
                 var communicationRecipientService = new CommunicationRecipientService( rockContext );
 
                 Rock.Model.Communication communication = null;
-                IQueryable<CommunicationRecipient> qryRecipients = null;
 
                 if ( settings.CommunicationId.GetValueOrDefault( 0 ) > 0 )
                 {
                     communication = communicationService.Get( settings.CommunicationId.Value );
                 }
 
+                if ( communication == null )
+                {
+                    communication = new Rock.Model.Communication();
+                    communication.Status = CommunicationStatus.Transient;
+                    communication.SenderPersonAliasId = settings.SenderPersonAliasId;
+                    communicationService.Add( communication );
+                }
+
+                communication.EnabledLavaCommands = settings.EnabledLavaCommands;
+
+                communication.Name = settings.CommunicationName.TrimForMaxLength( communication, "Name" );
+                communication.IsBulkCommunication = settings.IsBulkCommunication;
+                communication.CommunicationType = settings.MediumType;
+
+                if ( settings.CommunicationListGroupId.HasValue )
+                {
+                    communication.ListGroupId = settings.CommunicationListGroupId;
+                }
+                else
+                {
+                    communication.ListGroup = null;
+                    communication.ListGroupId = null;
+                }
+
+                communication.ExcludeDuplicateRecipientAddress = settings.ExcludeDuplicateRecipientAddress;
+                var segmentDataViewIds = settings.CommunicationGroupSegmentDataViewIds;
+
+                var segmentDataViewGuids = new DataViewService( rockContext ).GetByIds( segmentDataViewIds ).Select( a => a.Guid ).ToList();
+
+                communication.Segments = segmentDataViewGuids.AsDelimited( "," );
+                communication.SegmentCriteria = settings.CommunicationGroupSegmentFilterType;
+
+                communication.CommunicationTemplateId = settings.CommunicationTemplateId;
+
+                if ( communication.CommunicationTemplateId.HasValue )
+                {
+                    communication.CommunicationTemplate = new CommunicationTemplateService( rockContext ).Get( communication.CommunicationTemplateId.Value );
+                }
+
+                communication.FromName = settings.Details.FromName.TrimForMaxLength( communication, "FromName" );
+                communication.FromEmail = settings.Details.FromEmail.TrimForMaxLength( communication, "FromEmail" );
+                communication.ReplyToEmail = settings.Details.ReplyToEmail.TrimForMaxLength( communication, "ReplyToEmail" );
+                communication.CCEmails = settings.Details.CCEmails;
+                communication.BCCEmails = settings.Details.BCCEmails;
+
+                var emailBinaryFileIds = settings.EmailBinaryFileIds ?? new List<int>();
+                var smsBinaryFileIds = settings.SmsBinaryFileIds ?? new List<int>();
+
+                // delete any attachments that are no longer included
+                foreach ( var attachment in communication.Attachments.Where( a => ( !emailBinaryFileIds.Contains( a.BinaryFileId ) && !smsBinaryFileIds.Contains( a.BinaryFileId ) ) ).ToList() )
+                {
+                    communication.Attachments.Remove( attachment );
+                    communicationAttachmentService.Delete( attachment );
+                }
+
+                // add any new email attachments that were added
+                foreach ( var attachmentBinaryFileId in emailBinaryFileIds.Where( a => !communication.Attachments.Any( x => x.BinaryFileId == a ) ) )
+                {
+                    communication.Attachments.Add( new CommunicationAttachment { BinaryFileId = attachmentBinaryFileId, CommunicationType = CommunicationType.Email } );
+                }
+
+                // add any new SMS attachments that were added
+                foreach ( var attachmentBinaryFileId in smsBinaryFileIds.Where( a => !communication.Attachments.Any( x => x.BinaryFileId == a ) ) )
+                {
+                    communication.Attachments.Add( new CommunicationAttachment { BinaryFileId = attachmentBinaryFileId, CommunicationType = CommunicationType.SMS } );
+                }
+
+                communication.Subject = settings.Details.Subject.TrimForMaxLength( communication, "Subject" );
+                communication.Message = settings.Details.Message;
+
+                communication.SMSFromDefinedValueId = settings.Details.SMSFromDefinedValueId;
+                communication.SMSMessage = settings.Details.SMSMessage;
+
+                communication.FutureSendDateTime = settings.FutureSendDateTime;
+
+                communication.PushData = settings.Details.PushData;
+                communication.PushImageBinaryFileId = settings.Details.PushImageBinaryFileId;
+                communication.PushMessage = settings.Details.PushMessage;
+                communication.PushOpenAction = settings.Details.PushOpenAction;
+                communication.PushOpenMessage = settings.Details.PushOpenMessage;
+                communication.PushTitle = settings.Details.PushTitle;
+
+                return communication;
+            }
+
+            /// <summary>
+            /// Updates the recipients of an existing Communication.
+            /// </summary>
+            /// <param name="rockContext"></param>
+            /// <param name="settings"></param>
+            /// <param name="progressReporter"></param>
+            /// <returns></returns>
+            public Rock.Model.Communication UpdateCommunicationRecipients( RockContext rockContext, int communicationId, IEnumerable<int> recipientPersonIdList, IProgress<TaskProgressMessage> progressReporter = null )
+            {
                 ReportProgress( progressReporter, 0, activityMessage: "Creating Recipients List..." );
+
+                var communicationService = new CommunicationService( rockContext );
+                var communicationRecipientService = new CommunicationRecipientService( rockContext );
+
+                Rock.Model.Communication communication = null;
+                IQueryable<CommunicationRecipient> qryRecipients = null;
+
+                communication = communicationService.Get( communicationId );
 
                 if ( communication != null )
                 {
                     // Remove any deleted recipients
-                    var personIdHash = new HashSet<int>( settings.RecipientPersonIds );
+                    var personIdHash = new HashSet<int>( recipientPersonIdList );
                     qryRecipients = communication.GetRecipientsQry( rockContext );
 
                     foreach ( var item in qryRecipients.Select( a => new
@@ -2832,16 +2979,6 @@ sendCountTerm.PluralizeIf( sendCount != 1 ) );
                     }
                 }
 
-                if ( communication == null )
-                {
-                    communication = new Rock.Model.Communication();
-                    communication.Status = CommunicationStatus.Transient;
-                    communication.SenderPersonAliasId = settings.SenderPersonAliasId;
-                    communicationService.Add( communication );
-                }
-
-                communication.EnabledLavaCommands = settings.EnabledLavaCommands;
-
                 if ( qryRecipients == null )
                 {
                     qryRecipients = communication.GetRecipientsQry( rockContext );
@@ -2852,7 +2989,7 @@ sendCountTerm.PluralizeIf( sendCount != 1 ) );
 
                 var communicationPersonIdHash = new HashSet<int>( qryRecipients.Select( a => a.PersonAlias.PersonId ) );
 
-                var recipientPersonIdQuery = GetRecipientPersonIdPersistedList( settings.RecipientPersonIds, rockContext );
+                var recipientPersonIdQuery = GetRecipientPersonIdPersistedList( recipientPersonIdList, rockContext );
 
                 if ( recipientPersonIdQuery == null )
                 {
@@ -2882,20 +3019,6 @@ sendCountTerm.PluralizeIf( sendCount != 1 ) );
                 }
 
                 ReportProgress( progressReporter, 15, activityMessage: "Creating Recipients List..." );
-
-                communication.Name = settings.CommunicationName.TrimForMaxLength( communication, "Name" );
-                communication.IsBulkCommunication = settings.IsBulkCommunication;
-                communication.CommunicationType = settings.MediumType;
-
-                if ( settings.CommunicationListGroupId.HasValue )
-                {
-                    communication.ListGroupId = settings.CommunicationListGroupId;
-                }
-                else
-                {
-                    communication.ListGroup = null;
-                    communication.ListGroupId = null;
-                }
 
                 var emailMediumEntityType = EntityTypeCache.Get( Rock.SystemGuid.EntityType.COMMUNICATION_MEDIUM_EMAIL.AsGuid() );
                 var smsMediumEntityType = EntityTypeCache.Get( Rock.SystemGuid.EntityType.COMMUNICATION_MEDIUM_SMS.AsGuid() );
@@ -2943,68 +3066,6 @@ sendCountTerm.PluralizeIf( sendCount != 1 ) );
                     ReportProgress( progressReporter, 20 + decimal.Divide( currentCount, totalCount ) * 70, 0, "Processing Recipients ({0} of {1})...", currentCount, totalCount );
                 }
 
-                communication.ExcludeDuplicateRecipientAddress = settings.ExcludeDuplicateRecipientAddress;
-                var segmentDataViewIds = settings.CommunicationGroupSegmentDataViewIds;
-
-                var segmentDataViewGuids = new DataViewService( rockContext ).GetByIds( segmentDataViewIds ).Select( a => a.Guid ).ToList();
-
-                communication.Segments = segmentDataViewGuids.AsDelimited( "," );
-                communication.SegmentCriteria = settings.CommunicationGroupSegmentFilterType;
-
-                communication.CommunicationTemplateId = settings.CommunicationTemplateId;
-
-                if ( communication.CommunicationTemplateId.HasValue )
-                {
-                    communication.CommunicationTemplate = new CommunicationTemplateService( rockContext ).Get( communication.CommunicationTemplateId.Value );
-                }
-
-                communication.FromName = settings.Details.FromName.TrimForMaxLength( communication, "FromName" );
-                communication.FromEmail = settings.Details.FromEmail.TrimForMaxLength( communication, "FromEmail" );
-                communication.ReplyToEmail = settings.Details.ReplyToEmail.TrimForMaxLength( communication, "ReplyToEmail" );
-                communication.CCEmails = settings.Details.CCEmails;
-                communication.BCCEmails = settings.Details.BCCEmails;
-
-                ReportProgress( progressReporter, 90, activityMessage: "Processing Attachments..." );
-
-                var emailBinaryFileIds = settings.EmailBinaryFileIds ?? new List<int>();
-                var smsBinaryFileIds = settings.SmsBinaryFileIds ?? new List<int>();
-
-                // delete any attachments that are no longer included
-                foreach ( var attachment in communication.Attachments.Where( a => ( !emailBinaryFileIds.Contains( a.BinaryFileId ) && !smsBinaryFileIds.Contains( a.BinaryFileId ) ) ).ToList() )
-                {
-                    communication.Attachments.Remove( attachment );
-                    communicationAttachmentService.Delete( attachment );
-                }
-
-                // add any new email attachments that were added
-                foreach ( var attachmentBinaryFileId in emailBinaryFileIds.Where( a => !communication.Attachments.Any( x => x.BinaryFileId == a ) ) )
-                {
-                    communication.Attachments.Add( new CommunicationAttachment { BinaryFileId = attachmentBinaryFileId, CommunicationType = CommunicationType.Email } );
-                }
-
-                // add any new SMS attachments that were added
-                foreach ( var attachmentBinaryFileId in smsBinaryFileIds.Where( a => !communication.Attachments.Any( x => x.BinaryFileId == a ) ) )
-                {
-                    communication.Attachments.Add( new CommunicationAttachment { BinaryFileId = attachmentBinaryFileId, CommunicationType = CommunicationType.SMS } );
-                }
-
-                communication.Subject = settings.Details.Subject.TrimForMaxLength( communication, "Subject" );
-                communication.Message = settings.Details.Message;
-
-                communication.SMSFromDefinedValueId = settings.Details.SMSFromDefinedValueId;
-                communication.SMSMessage = settings.Details.SMSMessage;
-
-                communication.FutureSendDateTime = settings.FutureSendDateTime;
-
-                communication.PushData = settings.Details.PushData;
-                communication.PushImageBinaryFileId = settings.Details.PushImageBinaryFileId;
-                communication.PushMessage = settings.Details.PushMessage;
-                communication.PushOpenAction = settings.Details.PushOpenAction;
-                communication.PushOpenMessage = settings.Details.PushOpenMessage;
-                communication.PushTitle = settings.Details.PushTitle;
-
-                ReportProgress( progressReporter, 90, activityMessage: "Finalizing Communication..." );
-
                 return communication;
             }
 
@@ -3018,13 +3079,18 @@ sendCountTerm.PluralizeIf( sendCount != 1 ) );
                     return;
                 }
 
-                if ( completionPercentage == _lastCompletionPercentage
-                     && activityMessage == _lastActivityMessage )
+                var message = string.Format( activityMessage, args );
+
+                if ( (int)completionPercentage == _lastCompletionPercentage
+                     && message == _lastActivityMessage )
                 {
                     return;
                 }
 
-                progressReporter.Report( TaskProgressMessage.New( completionPercentage, elapsedMilliseconds, activityMessage, args ) );
+                progressReporter.Report( TaskProgressMessage.New( completionPercentage, elapsedMilliseconds, message ) );
+                
+                _lastCompletionPercentage = (int)completionPercentage;
+                _lastActivityMessage = message;
             }
 
             /// <summary>
@@ -3033,7 +3099,7 @@ sendCountTerm.PluralizeIf( sendCount != 1 ) );
             /// that may break the limits of the query parser.
             /// </summary>
             /// <param name="rockContext">The rock context.</param>
-            private IQueryable<int> GetRecipientPersonIdPersistedList( List<int> personIdList, RockContext rockContext )
+            private IQueryable<int> GetRecipientPersonIdPersistedList( IEnumerable<int> personIdList, RockContext rockContext )
             {
                 if ( personIdList == null
                      || !personIdList.Any() )
@@ -3061,7 +3127,7 @@ sendCountTerm.PluralizeIf( sendCount != 1 ) );
             public class CommunicationProperties
             {
                 public int? CommunicationId;
-                public List<int> RecipientPersonIds;
+                //public List<int> RecipientPersonIds;
                 public int? SenderPersonAliasId;
                 public string EnabledLavaCommands;
                 public string CommunicationName;
