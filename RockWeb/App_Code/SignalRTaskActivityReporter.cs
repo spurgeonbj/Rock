@@ -105,8 +105,6 @@ namespace RockWeb
             {
                 _timer.Stop();
 
-                // Debug.Print( "[{0}] <Timer_Event> (ThreadId={1})", DateTime.Now.ToString( "hh:mm:ss" ), Thread.CurrentThread.ManagedThreadId );
-
                 try
                 {
                     // Add a time-based notification for this interval update.
@@ -219,8 +217,6 @@ namespace RockWeb
 
             _status = ReporterStatusSpecifier.Started;
 
-            // Debug.Print( "[{0}] START TASK (ThreadId={1})", DateTime.Now.ToString( "hh:mm:ss" ), Thread.CurrentThread.ManagedThreadId );
-
             // Initialize the timer to trigger time-based updates.
             if ( _timer != null )
             {
@@ -300,9 +296,6 @@ namespace RockWeb
 
             try
             {
-                // Debug.Print( "[{0}] START - Queue Processing (ThreadId={1})", DateTime.Now.ToString( "hh:mm:ss" ), Thread.CurrentThread.ManagedThreadId );
-                //// Debug.Print( "[{0}] START - Queue Processing", DateTime.Now.ToString( "hh:mm:ss" ) );
-
                 // Send all of the queued messages.
                 var messages = new List<ITaskActivityMessage>();
 
@@ -346,7 +339,6 @@ namespace RockWeb
 
                         if ( nextMessage != null && nextMessage is TaskProgressMessage )
                         {
-                            //// Debug.Print( "[{0}] [{1}] <{2}> [IGNORED] {3}", DateTime.Now.ToString("hh:mm:ss"), new TimeSpan( 0, 0, 0, 0, (int)thisMessage.ElapsedTime ).ToString( @"hh\:mm\:ss\.fff" ), thisMessage.MessageType, thisMessage.SummaryText );
                             continue;
                         }
 
@@ -369,18 +361,10 @@ namespace RockWeb
                             _messageHub.Clients.All.NotifyTaskComplete( infoMessage );
                         }
                     }
-
-                    if ( thisMessage != null )
-                    {
-                        // Debug.Print( "[{0}] [{1}] <{2}> {3}", DateTime.Now.ToString( "hh:mm:ss" ), new TimeSpan( 0, 0, 0, 0, (int)thisMessage.ElapsedTime ).ToString( @"hh\:mm\:ss\.fff" ), thisMessage.MessageType, thisMessage.SummaryText );
-                    }
-
                 }
 
                 // Set the time at which the next notification can occur.
                 _nextNotificationMilliseconds = _stopwatch.ElapsedMilliseconds + this.NotificationIntervalMilliseconds;
-
-                // Debug.Print( "[{0}] END - Queue Processing ({1} items)", DateTime.Now.ToString( "hh:mm:ss" ), messages.Count );
             }
             finally
             {
