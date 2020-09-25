@@ -154,7 +154,7 @@ namespace RockWeb.Blocks.Reporting
         protected void btnToggleResults_Click( object sender, EventArgs e )
         {
             var showResults = GetBlockUserPreference( UserPreferenceKey.ShowResults ).AsBoolean( true );
-            SetBlockUserPreference( UserPreferenceKey.ShowResults, showResults.ToString() );
+            SetBlockUserPreference( UserPreferenceKey.ShowResults, ( !showResults ).ToString() );
             BindGrid();
         }
 
@@ -178,6 +178,7 @@ namespace RockWeb.Blocks.Reporting
         private void BindGrid()
         {
             var dataViewId = hfDataViewId.Value.AsIntegerOrNull();
+            pnlResultsGrid.Visible = false;
 
             pnlView.Visible = false;
             if ( !dataViewId.HasValue )
@@ -215,18 +216,33 @@ namespace RockWeb.Blocks.Reporting
 
             // Only respect the ShowResults option if fetchRowCount is null
             var showResults = GetBlockUserPreference( UserPreferenceKey.ShowResults ).AsBooleanOrNull() ?? true;
+
+            if ( showResults )
+            {
+                btnToggleResults.Text = "Hide Results <i class='fa fa-chevron-up'></i>";
+                btnToggleResults.ToolTip = "Hide Results";
+                btnToggleResults.RemoveCssClass( "btn-primary" );
+                btnToggleResults.AddCssClass( "btn-default" );
+            }
+            else
+            {
+                btnToggleResults.Text = "Show Results <i class='fa fa-chevron-down'></i>";
+                btnToggleResults.RemoveCssClass( "btn-default" );
+                btnToggleResults.AddCssClass( "btn-primary" );
+                btnToggleResults.ToolTip = "Show Results";
+            }
+
             if ( !showResults )
             {
                 return;
             }
-
-            pnlResultsGrid.Visible = false;
 
             if ( !dataView.IsAuthorized( Authorization.VIEW, CurrentPerson ) )
             {
                 return;
             }
 
+            gDataViewResults.EntityTypeId = dataView.EntityTypeId;
             bool isPersonDataSet = dataView.EntityTypeId == EntityTypeCache.GetId<Rock.Model.Person>();
 
             if ( isPersonDataSet )
@@ -246,7 +262,7 @@ namespace RockWeb.Blocks.Reporting
             }
 
             pnlResultsGrid.Visible = true;
-            
+
             var enableCountingDataViewStatistics = this.GetAttributeValue( AttributeKey.EnableCountingDataViewStatistics ).AsBooleanOrNull() ?? true;
 
             DataView dataViewForGrid;
