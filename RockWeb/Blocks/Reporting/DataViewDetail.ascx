@@ -1,5 +1,5 @@
 ﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="DataViewDetail.ascx.cs" Inherits="RockWeb.Blocks.Reporting.DataViewDetail" %>
-<asp:UpdatePanel ID="upDataView" runat="server">
+<asp:UpdatePanel ID="upDataViewDetail" runat="server">
     <ContentTemplate>
 
         <asp:Panel ID="pnlDetails" runat="server" Visible="false">
@@ -120,8 +120,6 @@
                     </div>
 
                 </div>
-
-                
             </div>
 
             <Rock:ModalDialog ID="modalPreview" runat="server" Title="Preview (top 15 rows )" ValidationGroup="Preview">

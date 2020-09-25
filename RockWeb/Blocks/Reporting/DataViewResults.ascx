@@ -20,7 +20,7 @@
                 <div class="panel-body">
                     <Rock:NotificationBox ID="nbGridError" runat="server" NotificationBoxType="Warning" />
                     <div class="grid grid-panel">
-                        <Rock:Grid ID="gReport" runat="server" AllowSorting="true" EmptyDataText="No Results" />
+                        <Rock:Grid ID="gDataViewResults" runat="server" AllowSorting="true" EmptyDataText="No Results" />
                     </div>
                 </div>
             </asp:Panel>
