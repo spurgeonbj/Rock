@@ -242,7 +242,8 @@ namespace Rock.Utility
         {
             var message = new TaskProgressMessage();
 
-            if ( args != null )
+            if ( activityMessage != null
+                 && args != null )
             {
                 activityMessage = string.Format( activityMessage, args );
             }

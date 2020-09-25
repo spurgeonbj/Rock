@@ -15,8 +15,10 @@
 // </copyright>
 //
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using Microsoft.AspNet.SignalR;
@@ -42,16 +44,12 @@ namespace RockWeb
 
         private System.Timers.Timer _timer = null;
         private Stopwatch _stopwatch = new Stopwatch();
-        private bool _notificationsCanSend = false;
         private bool _notificationsAreDelayed = false;
         private ReporterStatusSpecifier _status = ReporterStatusSpecifier.Ready;
         private TaskProgressMessage _lastProgressMessage = null;
-        private Progress<TaskProgressMessage> _taskActivity;
         private IHubContext<ITaskActivityMessageHub> _messageHub;
-        private Queue<ITaskActivityMessage> _reportQueue;
-        private bool _isProcessing = false;
+        private ConcurrentQueue<ITaskActivityMessage> _reportQueue;
         private object _timerLock = new object();
-        private object _reportQueueLock = new object();
         private object _processQueueLock = new object();
 
         #region Properties
@@ -100,91 +98,56 @@ namespace RockWeb
 
         #region Event Handlers
 
-        private bool _timerEventIsProcessing = false;
-
         private void _timer_Elapsed( object sender, System.Timers.ElapsedEventArgs e )
         {
             // Synchronise this timer event because it may be executed on multiple threads.
-            lock ( _timerLock )
+            if ( Monitor.TryEnter( _timerLock ) )
             {
-                if ( _timerEventIsProcessing )
-                {
-                    return;
-                }
+                _timer.Stop();
 
-                _timerEventIsProcessing = true;
-            }
+                // Debug.Print( "[{0}] <Timer_Event> (ThreadId={1})", DateTime.Now.ToString( "hh:mm:ss" ), Thread.CurrentThread.ManagedThreadId );
 
-            try
-            {
-                // Add a time-based notification for this interval update.
-                if ( this.NotifyElapsedTime )
+                try
                 {
-                    // If this is the first timer event, remove previous progress updates from the queue.
-                    if ( _notificationsAreDelayed )
+                    // Add a time-based notification for this interval update.
+                    if ( this.NotifyElapsedTime )
                     {
-                        Debug.Print( "Clearing queue..." );
-
-                        lock ( _reportQueueLock )
+                        // If this is the first timer event, reconfigure the timer remove all previous progress updates from the queue.
+                        if ( _notificationsAreDelayed )
                         {
-                            while ( _reportQueue.Count > 0
-                                    && _reportQueue.Peek() is TaskProgressMessage )
-                            {
-                                _reportQueue.Dequeue();
-                            }
+                            _timer.Interval = NotificationIntervalMilliseconds;
+                            _timer.AutoReset = true;
+
+                            _notificationsAreDelayed = false;
                         }
 
-                        _notificationsAreDelayed = false;
-                    }
+                        TaskProgressMessage message;
 
-                    TaskProgressMessage message;
-
-                    if ( _lastProgressMessage == null )
-                    {
-                        message = TaskProgressMessage.New( 0, _stopwatch.ElapsedMilliseconds, "Running..." );
-                    }
-                    else
-                    {
-                        message = TaskProgressMessage.New( _lastProgressMessage.CompletionPercentage, _stopwatch.ElapsedMilliseconds, _lastProgressMessage.Message );
-                    }
-
-                    Report( message );
-                }
-
-                // Set the flag to indicate that the message queue can now be processed.                
-                _notificationsCanSend = true;
-
-                ProcessQueuedMessages();
-
-                lock ( _timerLock )
-                {
-                    if ( _timer != null )
-                    {
-                        if ( _status == ReporterStatusSpecifier.Stopped )
+                        if ( _lastProgressMessage == null )
                         {
-                            _timer.Stop();
+                            message = TaskProgressMessage.New( 0, _stopwatch.ElapsedMilliseconds, "Running..." );
                         }
                         else
                         {
-                            if ( this.NotifyElapsedTime
-                                 && !_timer.AutoReset )
-                            {
-                                _timer.Interval = NotificationIntervalMilliseconds;
-                                _timer.AutoReset = true;
-                            }
+                            message = TaskProgressMessage.New( _lastProgressMessage.CompletionPercentage, _stopwatch.ElapsedMilliseconds, _lastProgressMessage.Message );
                         }
+
+                        Report( message );
+                    }
+
+                    ProcessQueuedMessages();
+
+                    if ( this.NotifyElapsedTime )
+                    {
+                        // Restart the timer to generate notifications at regular intervals.
+                        _timer.Start();
                     }
                 }
+                finally
+                {
+                    Monitor.Exit( _timerLock );
+                }
             }
-            finally
-            {
-                _timerEventIsProcessing = false;
-            }
-        }
-
-        private void _TaskActivity_TaskActivityChanged( object sender, TaskProgressMessage e )
-        {
-            QueueMessage( e );
         }
 
         #endregion
@@ -239,9 +202,7 @@ namespace RockWeb
             // Set the elapsed time.
             value.SetProgress( value.CompletionPercentage, _stopwatch.ElapsedMilliseconds, value.Message );
 
-            var progress = (IProgress<TaskProgressMessage>)_taskActivity;
-
-            progress.Report( value );
+            QueueMessage( value );
 
             _lastProgressMessage = value;
         }
@@ -258,16 +219,9 @@ namespace RockWeb
 
             _status = ReporterStatusSpecifier.Started;
 
-            // Initialize the progress counter and timers.
-            if ( _taskActivity != null )
-            {
-                _taskActivity.ProgressChanged -= _TaskActivity_TaskActivityChanged;
-            }
+            // Debug.Print( "[{0}] START TASK (ThreadId={1})", DateTime.Now.ToString( "hh:mm:ss" ), Thread.CurrentThread.ManagedThreadId );
 
-            _taskActivity = new Progress<TaskProgressMessage>();
-
-            _taskActivity.ProgressChanged += _TaskActivity_TaskActivityChanged;
-
+            // Initialize the timer to trigger time-based updates.
             if ( _timer != null )
             {
                 _timer.Stop();
@@ -278,7 +232,7 @@ namespace RockWeb
             _stopwatch.Restart();
 
             // Initialize the SignalR hub and notification message queue.
-            _reportQueue = new Queue<ITaskActivityMessage>();
+            _reportQueue = new ConcurrentQueue<ITaskActivityMessage>();
 
             _messageHub = GlobalHost.ConnectionManager.GetHubContext<TaskActivityMessageHub, ITaskActivityMessageHub>();
 
@@ -305,49 +259,72 @@ namespace RockWeb
                 _timer.Elapsed += _timer_Elapsed;
 
                 _timer.Start();
-
-                _notificationsCanSend = false;
-            }
-            else
-            {
-                _notificationsCanSend = true;
             }
         }
 
         private void QueueMessage( ITaskActivityMessage message )
         {
             // Add the message to the queue
-            lock ( _reportQueueLock )
-            {
-                _reportQueue.Enqueue( message );
-            }
+            _reportQueue.Enqueue( message );
 
             ProcessQueuedMessages();
         }
 
-        private void ProcessQueuedMessages( bool forceProcessing = false )
+        private long _nextNotificationMilliseconds = 0;
+
+        private void ProcessQueuedMessages( bool forceProcessing = false, bool flushAllItems = false )
         {
-            lock ( _processQueueLock )
+            bool hasLock = false;
+
+            if ( forceProcessing )
+            {
+                // Wait here until we can process the queue.
+                Monitor.Enter( _processQueueLock, ref hasLock );
+            }
+            else
             {
                 // If the minimum notification interval has not elapsed, do not process the queue.
-                if ( !forceProcessing && ( _isProcessing || !_notificationsCanSend ) )
+                if ( _stopwatch.ElapsedMilliseconds < _nextNotificationMilliseconds )
                 {
                     return;
                 }
 
-                _isProcessing = true;
+                // Try to lock the queue for processing, but exit if it is already being processed.
+                Monitor.TryEnter( _processQueueLock, ref hasLock );
+            }
+
+            if ( !hasLock )
+            {
+                return;
             }
 
             try
             {
+                // Debug.Print( "[{0}] START - Queue Processing (ThreadId={1})", DateTime.Now.ToString( "hh:mm:ss" ), Thread.CurrentThread.ManagedThreadId );
+                //// Debug.Print( "[{0}] START - Queue Processing", DateTime.Now.ToString( "hh:mm:ss" ) );
+
                 // Send all of the queued messages.
                 var messages = new List<ITaskActivityMessage>();
 
-                lock ( _reportQueueLock )
+                // Retrieve items to process, up to a maximum of 100 items.
+                bool getNextItem = true;
+                int itemCount = 0;
+
+                while ( getNextItem )
                 {
-                    while ( _reportQueue.Count > 0 )
+                    ITaskActivityMessage message;
+
+                    getNextItem = _reportQueue.TryDequeue( out message );
+
+                    if ( getNextItem )
                     {
-                        messages.Add( _reportQueue.Dequeue() );
+                        messages.Add( message );
+                        itemCount++;
+
+                        if ( !flushAllItems && itemCount >= 1000 )
+                        {
+                            getNextItem = false;
+                        }
                     }
                 }
 
@@ -358,6 +335,8 @@ namespace RockWeb
 
                     if ( thisMessage is TaskProgressMessage )
                     {
+                        var progressMessage = (TaskProgressMessage)thisMessage;
+
                         // Only send this message if the next message in the queue is not also a progress message.
                         // This prevents the client from receiving a series of stale progress messages.
                         if ( i < messages.Count - 1 )
@@ -367,9 +346,13 @@ namespace RockWeb
 
                         if ( nextMessage != null && nextMessage is TaskProgressMessage )
                         {
-                            Debug.Print( "[{0}] <{1}> [IGNORED] {2}", new TimeSpan( 0, 0, 0, 0, (int)thisMessage.ElapsedTime ).ToString( @"hh\:mm\:ss\.fff" ), thisMessage.MessageType, thisMessage.SummaryText );
+                            //// Debug.Print( "[{0}] [{1}] <{2}> [IGNORED] {3}", DateTime.Now.ToString("hh:mm:ss"), new TimeSpan( 0, 0, 0, 0, (int)thisMessage.ElapsedTime ).ToString( @"hh\:mm\:ss\.fff" ), thisMessage.MessageType, thisMessage.SummaryText );
                             continue;
                         }
+
+                        // Set the elapsed time according to when the notification is sent, because this is more relevant to the client.
+                        // This may be quite different from the actual task processing time if the queue is slow to process.
+                        progressMessage.SetProgress( progressMessage.CompletionPercentage, _stopwatch.ElapsedMilliseconds, progressMessage.Message );
 
                         _messageHub.Clients.All.UpdateTaskProgress( (TaskProgressMessage)thisMessage );
                     }
@@ -389,15 +372,19 @@ namespace RockWeb
 
                     if ( thisMessage != null )
                     {
-                        Debug.Print( "[{0}] <{1}> {2}", new TimeSpan( 0, 0, 0, 0, (int)thisMessage.ElapsedTime ).ToString( @"hh\:mm\:ss\.fff" ), thisMessage.MessageType, thisMessage.SummaryText );
+                        // Debug.Print( "[{0}] [{1}] <{2}> {3}", DateTime.Now.ToString( "hh:mm:ss" ), new TimeSpan( 0, 0, 0, 0, (int)thisMessage.ElapsedTime ).ToString( @"hh\:mm\:ss\.fff" ), thisMessage.MessageType, thisMessage.SummaryText );
                     }
 
                 }
+
+                // Set the time at which the next notification can occur.
+                _nextNotificationMilliseconds = _stopwatch.ElapsedMilliseconds + this.NotificationIntervalMilliseconds;
+
+                // Debug.Print( "[{0}] END - Queue Processing ({1} items)", DateTime.Now.ToString( "hh:mm:ss" ), messages.Count );
             }
             finally
             {
-                _isProcessing = false;
-                _notificationsCanSend = false;
+                Monitor.Exit( _processQueueLock );
             }
         }
 
@@ -457,10 +444,38 @@ namespace RockWeb
             QueueMessage( taskInfo );
 
             // Flush the message queue.
-            ProcessQueuedMessages( forceProcessing: true );
+            ProcessQueuedMessages( forceProcessing: true, flushAllItems: true );
         }
 
         #endregion
+
+        /// <summary>
+        /// An implementation of a progress reporter that is compatible can with the Task-based Asynchronous Pattern (TAP) library.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        private class SignalRProgressReporter : IProgress<TaskProgressMessage>
+        {
+            private readonly Action<TaskProgressMessage> _reportAction;
+
+            public SignalRProgressReporter( Action<TaskProgressMessage> report )
+            {
+                _reportAction = report;
+            }
+
+            /// <summary>
+            /// Report progress.
+            /// </summary>
+            /// <param name="value"></param>
+            public void Report( TaskProgressMessage value )
+            {
+                if ( _reportAction == null )
+                {
+                    return;
+                }
+
+                _reportAction( value );
+            }
+        }
     }
 
     #region Helpers
