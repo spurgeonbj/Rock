@@ -96,10 +96,11 @@ public class BundleConfig
         bundles.Add( new ScriptBundle( "~/Scripts/Bundles/Obsidian" ).Include(
             "~/Obsidian/Vendor/axios.js",
             "~/Obsidian/Vendor/vue.js",
-            "~/Obsidian/Vendor/vue-in-browser.js",
             "~/Obsidian/init.js",
             "~/Obsidian/Elements/*.js",
-            "~/Obsidian/Controls/*.js" ) );
+            "~/Obsidian/Controls/*.js",
+            "~/Obsidian/Blocks/Security/*.js",
+            "~/Obsidian/Blocks/Test/*.js" ) );
 
         // make sure the ConcatenationToken is what we want.  This is supposed to be the default, but it occasionally was an empty string.
         foreach ( var bundle in bundles )

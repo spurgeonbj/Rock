@@ -56,18 +56,21 @@
             immediate: true,
             handler: async function () {
                 if (!this.definedTypeGuid) {
-                    this.definedTypes = [];
-                    return;
+                    this.definedValues = [];
+                }
+                else {
+                    this.isLoading = true;
+                    const result = await this.http.get(`/api/obsidian/v1/controls/definedvaluepicker/${this.definedTypeGuid}`);
+
+                    if (result && Array.isArray(result.data)) {
+                        this.definedValues = result.data;
+                    }
+
+                    this.isLoading = false;
                 }
 
-                this.isLoading = true;
-                const result = await this.http.get(`/api/obsidian/v1/controls/definedvaluepicker/${this.definedTypeGuid}`);
-
-                if (result && Array.isArray(result.data)) {
-                    this.definedValues = result.data;
-                }
-
-                this.isLoading = false;
+                this.internalValue = '';
+                this.onChange();
             }
         }
     },

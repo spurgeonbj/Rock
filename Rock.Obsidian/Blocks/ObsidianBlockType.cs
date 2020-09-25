@@ -76,28 +76,21 @@ namespace Rock.Obsidian.Blocks
         /// <returns></returns>
         public override string GetControlMarkup()
         {
-            var rootElementId = $"obsidian-{this.BlockCache.Guid}";
+            var rootElementId = $"obsidian-{BlockCache.Guid}";
 
             return
 $@"<div id=""{rootElementId}""></div>
-<script>
-    Obsidian.Util.loadVueFile('/Obsidian/Blocks/{BlockMarkupFileIdentifier}.vue', '#{rootElementId}');
-</script>
 <script type=""text/javascript"">
-    Obsidian.Blocks['{BlockMarkupFileIdentifier}'] = {{
+(function () {{
+    Obsidian.initializeBlock({{
+        blockFileIdentifier: '{BlockMarkupFileIdentifier}',
         rootElement: document.getElementById('{rootElementId}'),
         pageGuid: '{BlockCache.Page.Guid}',
         blockGuid: '{BlockCache.Guid}',
         additionalSettingsJson: {ConvertObjectToJavaScript( GetAdditionalSettings() )},
         configurationValuesJson: {ConvertObjectToJavaScript( GetConfigurationValues() )},
-        blockAction: Obsidian.Util.getBlockActionFunction({{
-            pageGuid: '{BlockCache.Page.Guid}',
-            blockGuid: '{BlockCache.Guid}'
-        }}),
-        http: Obsidian.Util.getBlockHttp({{
-            blockGuid: '{BlockCache.Guid}'
-        }})
-    }};
+    }});
+}})();
 </script>";
         }
 
