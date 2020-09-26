@@ -28,6 +28,7 @@ using System.Runtime.Serialization;
 using Humanizer;
 
 using Rock.Data;
+using Rock.Security;
 using Rock.Transactions;
 using Rock.Web.Cache;
 using Z.EntityFramework.Plus;
@@ -312,6 +313,47 @@ namespace Rock.Model
         #endregion
 
         #region Methods
+
+        public override ISecured ParentAuthority
+        {
+            get
+            {
+                return this.Group ?? new GroupService( new RockContext() ).Get( this.GroupId );
+            }
+        }
+
+        /// <summary>
+        /// Return <c>true</c> if the user is authorized to perform the selected action on this object.
+        /// </summary>
+        /// <param name="action">The action.</param>
+        /// <param name="person">The person.</param>
+        /// <returns>
+        /// <c>true</c> if the specified action is authorized; otherwise, <c>false</c>.
+        /// </returns>
+        public override bool IsAuthorized( string action, Person person )
+        {
+            if ( action.Equals( Rock.Security.Authorization.EDIT, StringComparison.OrdinalIgnoreCase ) )
+            {
+                var isAuthorized = base.IsAuthorized( action, person );
+                if ( !isAuthorized )
+                {
+                    var group = this.Group ?? new GroupService( new RockContext() ).Get( this.GroupId );
+
+                    if ( group != null )
+                    {
+                        var canEditMembers = group.IsAuthorized( Rock.Security.Authorization.EDIT, person );
+                        if ( !canEditMembers )
+                        {
+                            canEditMembers = group.IsAuthorized( Rock.Security.Authorization.MANAGE_MEMBERS, person );
+                        }
+
+                        return canEditMembers;
+                    }
+                }
+            }
+
+            return base.IsAuthorized( action, person );
+        }
 
         /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.
